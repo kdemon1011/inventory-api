@@ -8,4 +8,4 @@ os.makedirs(DATA_DIR, exist_ok=True)
 DB_PATH = os.path.join(DATA_DIR, "app.db")
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{DB_PATH}")
 
-API_PORT = int(os.getenv("API_PORT", "8050"))
+API_PORT = int(os.getenv("API_PORT", "8000"))

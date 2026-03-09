@@ -1,0 +1,82 @@
+# ──────────────────────────────────────────────
+# OpenEnv Environment Manifest
+# ──────────────────────────────────────────────
+# This file describes your environment for the OpenEnv ecosystem.
+# It tells tools/people what your environment is and how to run it.
+
+name: inventory_env
+version: "0.1.0"
+description: >
+  An inventory management environment for training AI agents.
+  Agents learn to manage products and orders through a REST API
+  by calling tools like create_product, list_products, create_order, etc.
+
+# Who made this
+author: "kdemon"
+
+# Server configuration
+server:
+  # The OpenEnv wrapper runs on this port
+  openenv_port: 9000
+  # Your original Inventory API runs on this port
+  inventory_api_port: 8000
+  dockerfile: Dockerfile
+
+# What actions (tools) the agent can use
+actions:
+  - name: create_product
+    method: POST
+    description: "Create a new product in the inventory"
+  - name: list_products
+    method: GET
+    description: "List all active products"
+  - name: search_products
+    method: GET
+    description: "Search products by name"
+  - name: get_product
+    method: GET
+    description: "Get a specific product by ID"
+  - name: update_product
+    method: PATCH
+    description: "Update a product's details"
+  - name: create_order
+    method: POST
+    description: "Create a new order with items"
+  - name: list_orders
+    method: GET
+    description: "List all orders (with optional date/status filters)"
+  - name: get_order
+    method: GET
+    description: "Get a specific order by ID"
+  - name: get_order_detail
+    method: GET
+    description: "Get detailed order info with items"
+  - name: get_order_summary
+    method: GET
+    description: "Get a summary of an order"
+
+# Available tasks for training
+tasks:
+  - id: task_1
+    description: "Create a specific product and verify it exists"
+  - id: task_2
+    description: "List products, create an order, and get its summary"
+  - id: task_3
+    description: "Search for a product and update its price"
+
+# Reward structure
+rewards:
+  successful_api_call: 1.0
+  failed_api_call: -0.5
+  invalid_tool: -1.0
+  step_penalty: -0.1
+  max_steps_per_episode: 10
+
+# Dependencies
+dependencies:
+  - fastapi>=0.104.0
+  - uvicorn>=0.24.0
+  - httpx>=0.25.0
+  - pydantic>=2.5.0
+  - sqlalchemy>=2.0.0
+  - aiosqlite>=0.19.0
