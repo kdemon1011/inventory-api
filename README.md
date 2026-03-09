@@ -5,7 +5,7 @@ An inventory management API wrapped as an [OpenEnv](https://github.com/meta-pyto
 ## Architecture
 
 ```
-AI Agent (MCPToolClient) --WebSocket--> OpenEnv Server (port 9000) --HTTP--> Inventory API (port 8050)
+AI Agent (MCPToolClient) --WebSocket--> OpenEnv Server (port 9000) --HTTP--> Inventory API (port 8000)
 ```
 
 The Inventory API (FastAPI + SQLite) runs as a standalone service. The OpenEnv environment wraps it by exposing 10 MCP tools — one for each API operation — so an agent can discover and invoke them through OpenEnv's standard interface.
@@ -44,7 +44,7 @@ You need **two terminals**:
 
 ```bash
 # Terminal 1 — Start the Inventory API
-API_PORT=8050 python main.py
+python main.py
 ```
 
 ```bash

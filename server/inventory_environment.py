@@ -21,7 +21,7 @@ Architecture:
 
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from uuid import uuid4
 
 import httpx
@@ -65,8 +65,6 @@ class InventoryEnvironment(MCPEnvironment):
 
         # Episode tracking
         self._state = State(episode_id=str(uuid4()), step_count=0)
-        self._total_reward = 0.0
-        self._action_history: List[str] = []
 
         # ────────────────────────────────────────────────
         # Define all tools using FastMCP decorators
@@ -301,22 +299,11 @@ class InventoryEnvironment(MCPEnvironment):
             episode_id=episode_id or str(uuid4()),
             step_count=0,
         )
-        self._total_reward = 0.0
-        self._action_history = []
 
         return Observation(
             done=False,
             reward=0.0,
-            metadata={
-                "status": "ready",
-                "message": "Inventory environment ready. Use list_tools() to discover available tools.",
-                "available_tools": [
-                    "create_product", "list_products", "get_product",
-                    "search_products", "update_product", "create_order",
-                    "list_orders", "get_order", "get_order_detail",
-                    "get_order_summary",
-                ],
-            },
+            metadata={"status": "ready"},
         )
 
     def _step_impl(
@@ -352,17 +339,8 @@ class InventoryEnvironment(MCPEnvironment):
         Delegates MCP actions (list_tools, call_tool) to the base class.
         Tracks step count and action history.
         """
-        # Track step count
         self._state.step_count += 1
-
-        # Record action in history
-        action_name = getattr(action, "tool_name", type(action).__name__)
-        self._action_history.append(action_name)
-
-        # Delegate to MCPEnvironment (handles list_tools & call_tool)
-        observation = super().step(action, timeout_s=timeout_s, **kwargs)
-
-        return observation
+        return super().step(action, timeout_s=timeout_s, **kwargs)
 
     @property
     def state(self) -> State:
