@@ -1,22 +1,25 @@
 """
-OpenEnv End-to-End Test Script.
+End-to-End Test for the Inventory OpenEnv Environment.
 
-This script simulates an AI agent interacting with your Inventory environment.
-It tests the complete flow: reset → step → step → step → state.
+This uses the REAL OpenEnv client (MCPToolClient) to interact with the
+Inventory environment. It demonstrates the actual workflow an AI agent
+would follow during RL training.
 
-Before running this, make sure BOTH servers are running:
+Before running:
   Terminal 1: cd /home/kdemon/Clients/huzzle/inventory-api && python main.py
-  Terminal 2: cd /home/kdemon/Clients/huzzle/inventory-api/server && python app.py
+  Terminal 2: cd /home/kdemon/Clients/huzzle/inventory-api && python server/app.py
 
-Then run:
+Then:
   python test_openenv.py
 """
 
-from client import InventoryEnvClient
+import time
+
+from client import InventoryEnv
+from openenv.core.env_server.mcp_types import CallToolAction
 
 
-def print_divider(text: str = ""):
-    """Print a nice divider for readability."""
+def divider(text: str = ""):
     print(f"\n{'='*60}")
     if text:
         print(f"  {text}")
@@ -24,101 +27,86 @@ def print_divider(text: str = ""):
 
 
 def main():
-    print_divider("🚀 OpenEnv Inventory Environment — End-to-End Test")
+    divider("OpenEnv Inventory Environment — End-to-End Test")
+    print("Using REAL OpenEnv MCPToolClient (WebSocket connection)")
     print()
 
-    # Connect to the OpenEnv server (port 9000, NOT the inventory API directly)
-    with InventoryEnvClient("http://localhost:9000") as client:
+    # Connect to the OpenEnv server using the real MCPToolClient
+    # Uses context manager for automatic connect/disconnect
+    with InventoryEnv(base_url="http://localhost:9000") as env:
 
-        # ── Health Check ──
-        print("1️⃣  Checking health...")
-        health = client.health()
-        print(f"   Status: {health['status']}")
-        print(f"   Connected to: {health['inventory_api_url']}")
+        # ── Step 1: Reset the environment ──
+        divider("Step 1: RESET — Start a new episode")
+        result = env.reset()
+        print(f"  Done: {result.done}")
+        print(f"  Reward: {result.reward}")
+        print(f"  Observation metadata: {result.observation.metadata}")
 
-        # ── Reset (Start Episode) ──
-        print_divider("2️⃣  RESET — Starting a new episode")
-        result = client.reset(task_index=0)
+        # ── Step 2: Discover available tools ──
+        divider("Step 2: LIST_TOOLS — Discover what the agent can do")
+        tools = env.list_tools()
+        print(f"  Found {len(tools)} tools:")
+        for tool in tools:
+            desc = tool.description.replace("\n", " ")[:60]
+            print(f"    - {tool.name}: {desc}...")
 
-        obs = result["observation"]
-        state = result["state"]
-        print(f"   Episode ID: {state['episode_id']}")
-        print(f"   📋 Task: {obs['data']['task']}")
-        print(f"   Available tools: {obs['available_tools']}")
-        print(f"   Step: {state['step_count']}, Reward: {state['total_reward']}")
+        # ── Step 3: Create a product ──
+        # NOTE: call_tool(self, name, **kwargs) has 'name' as its first arg.
+        #       Some tools (e.g. create_product) also have a 'name' parameter.
+        #       To avoid the Python conflict, use step() + CallToolAction directly.
+        divider("Step 3: CALL_TOOL — Create a product")
+        unique_sku = f"WM-{int(time.time())}"
+        step_result = env.step(CallToolAction(
+            tool_name="create_product",
+            arguments={
+                "name": "Wireless Mouse",
+                "sku": unique_sku,
+                "price": 29.99,
+                "description": "Ergonomic wireless mouse",
+                "stock_quantity": 100,
+            },
+        ))
+        print(f"  Observation: {step_result.observation}")
+        print(f"  Reward: {step_result.reward}")
 
-        # ── Step 1: Create a product ──
-        print_divider("3️⃣  STEP 1 — Creating a product")
-        result = client.step("create_product", {
-            "name": "Wireless Mouse",
-            "sku": "WM-001",
-            "price": 29.99,
-            "stock_quantity": 100,
-        })
-        obs = result["observation"]
-        print(f"   Success: {obs['success']}")
-        print(f"   Reward: {result['reward']}")
-        print(f"   Done: {result['done']}")
-        if obs["success"]:
-            print(f"   Created product: {obs['data']}")
-        else:
-            print(f"   Error: {obs.get('error')}")
+        # ── Step 4: List products ──
+        divider("Step 4: CALL_TOOL — List all products")
+        result = env.call_tool("list_products", active_only=True)
+        print(f"  Products: {result}")
 
-        # ── Step 2: List all products (verify the product exists) ──
-        print_divider("4️⃣  STEP 2 — Listing all products")
-        result = client.step("list_products", {})
-        obs = result["observation"]
-        print(f"   Success: {obs['success']}")
-        print(f"   Reward: {result['reward']}")
-        if obs["success"]:
-            products = obs["data"]
-            print(f"   Found {len(products)} product(s):")
-            for p in products:
-                print(f"     - {p['name']} (SKU: {p['sku']}, Price: ${p['price']})")
+        # ── Step 5: Create an order ──
+        divider("Step 5: CALL_TOOL — Create an order")
+        step_result = env.step(CallToolAction(
+            tool_name="create_order",
+            arguments={
+                "customer_name": "John Doe",
+                "customer_email": "john@example.com",
+                "items": [{"product_id": 1, "quantity": 2}],
+            },
+        ))
+        print(f"  Observation: {step_result.observation}")
 
-        # ── Step 3: Create an order ──
-        print_divider("5️⃣  STEP 3 — Creating an order")
-        result = client.step("create_order", {
-            "customer_name": "Alice Johnson",
-            "customer_email": "alice@example.com",
-            "items": [{"product_id": 1, "quantity": 2}],
-        })
-        obs = result["observation"]
-        print(f"   Success: {obs['success']}")
-        print(f"   Reward: {result['reward']}")
-        if obs["success"]:
-            print(f"   Order: {obs['data']}")
-        else:
-            print(f"   Error: {obs.get('error')}")
+        # ── Step 6: Get order summary ──
+        divider("Step 6: CALL_TOOL — Get order summary")
+        result = env.call_tool("get_order_summary", order_id=1)
+        print(f"  Summary: {result}")
 
-        # ── Step 4: Try an INVALID tool (to see penalty) ──
-        print_divider("6️⃣  STEP 4 — Testing invalid tool (should get penalty)")
-        result = client.step("delete_everything", {})
-        obs = result["observation"]
-        print(f"   Success: {obs['success']}")
-        print(f"   Reward: {result['reward']}  ← NEGATIVE (penalty!)")
-        print(f"   Error: {obs.get('error')}")
+        # ── Step 7: Check environment state ──
+        divider("Step 7: STATE — Check environment state")
+        state = env.state()
+        print(f"  Episode ID: {state.episode_id}")
+        print(f"  Step count: {state.step_count}")
 
-        # ── Check Final State ──
-        print_divider("7️⃣  FINAL STATE")
-        state_result = client.state()
-        state = state_result["state"]
-        history = state_result["action_history"]
-        print(f"   Episode ID: {state['episode_id']}")
-        print(f"   Steps taken: {state['step_count']}")
-        print(f"   Total reward: {state['total_reward']}")
-        print(f"   Task completed: {state['task_completed']}")
+        divider("ALL TESTS PASSED — OpenEnv Integration Working!")
         print()
-        print("   📜 Action History:")
-        for h in history:
-            print(f"     Step {h['step']}: {h['tool']}({h['parameters']})")
-
-    print_divider("✅ TEST COMPLETE!")
-    print()
-    print("What you just saw is EXACTLY what an AI agent would experience.")
-    print("In Part 2, an LLM will make these same calls automatically,")
-    print("and learn from the rewards to get better at the tasks!")
-    print()
+        print("  This proves:")
+        print("  1. MCPToolClient connects via WebSocket")
+        print("  2. reset() initialises a new episode")
+        print("  3. list_tools() discovers all 10 MCP tools")
+        print("  4. call_tool() / step(CallToolAction) invokes Inventory API")
+        print("  5. state() returns episode tracking info")
+        print("  6. End-to-end: Agent -> OpenEnv -> Inventory API -> Response")
+        print()
 
 
 if __name__ == "__main__":

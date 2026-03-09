@@ -1,342 +1,375 @@
 """
-OpenEnv Environment Wrapper for the Inventory Management API.
+Inventory Management Environment — built on OpenEnv's MCPEnvironment.
 
-THIS IS THE CORE FILE — it wraps your existing FastAPI inventory API
-with the OpenEnv standard interface (reset / step / state).
+This environment wraps the existing Inventory FastAPI app using OpenEnv's
+real framework. Instead of building custom reset/step/state logic, we:
 
-How it works:
-  1. Your original Inventory API runs on port 8000 (unchanged)
-  2. This wrapper runs ALONGSIDE it
-  3. When the AI agent calls step("create_product", {...}),
-     this wrapper translates it into an HTTP POST to /products on your API
-  4. It reads the response, computes a REWARD, and sends it all back
+1. Inherit from MCPEnvironment (OpenEnv's base class for tool-based envs)
+2. Define tools using FastMCP decorators (@mcp.tool)
+3. OpenEnv auto-discovers these tools and handles the Gym-style API
 
-Think of this as a TRANSLATOR:
-  Agent speaks "OpenEnv language" (reset/step/state)
-  Your API speaks "REST language" (GET/POST/PATCH /products /orders)
-  This file translates between the two.
+Each tool maps to an operation on the Inventory API (running on port 8000).
+The AI agent discovers tools via list_tools(), then calls them via call_tool().
+
+Architecture:
+    ┌─────────────┐  WebSocket   ┌──────────────────────┐  HTTP    ┌──────────────┐
+    │  AI Agent /  │ ──────────► │  THIS ENVIRONMENT    │ ───────► │ Inventory API│
+    │  RL Trainer  │ ◄────────── │  (OpenEnv, port 9000)│ ◄─────── │ (port 8000)  │
+    └─────────────┘              └──────────────────────┘          └──────────────┘
+        Uses MCPToolClient         Inherits MCPEnvironment           Your FastAPI
 """
 
-import uuid
-import logging
-import sys
 import os
+import sys
+from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 import httpx
+from fastmcp import FastMCP
 
-# Add parent directory to path so we can import env_models
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# ── OpenEnv Imports (the REAL library) ──
+from openenv.core.env_server.mcp_environment import MCPEnvironment
+from openenv.core.env_server.types import Action, Observation, State
 
-from env_models import InventoryAction, InventoryObservation, InventoryState, AVAILABLE_TOOLS
-
-logger = logging.getLogger(__name__)
-
-
-# ──────────────────────────────────────────────
-# TOOL REGISTRY: Maps tool names → HTTP method + URL path
-#
-# This is the "translation table":
-#   tool name           → HTTP method + API endpoint
-#   "create_product"    → POST /products
-#   "list_products"     → GET  /products
-#   "get_order"         → GET  /orders/{order_id}
-#   etc.
-# ──────────────────────────────────────────────
-TOOL_REGISTRY: dict[str, tuple[str, str]] = {
-    "create_product":    ("POST",  "/products"),
-    "list_products":     ("GET",   "/products"),
-    "search_products":   ("GET",   "/products/search"),
-    "get_product":       ("GET",   "/products/{product_id}"),
-    "update_product":    ("PATCH", "/products/{product_id}"),
-    "create_order":      ("POST",  "/orders"),
-    "list_orders":       ("GET",   "/orders"),
-    "get_order":         ("GET",   "/orders/{order_id}"),
-    "get_order_detail":  ("GET",   "/orders/{order_id}/detail"),
-    "get_order_summary": ("GET",   "/orders/{order_id}/summary"),
-}
+# Add parent directory so we can import config
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from config import INVENTORY_API_URL
 
 
-# ──────────────────────────────────────────────
-# TASK DEFINITIONS: What the agent is supposed to accomplish
-#
-# Each task has:
-#   - description: Human-readable instruction for the agent
-#   - validate: A function that checks if the agent completed the task
-#
-# The RL training loop will pick a task, give it to the agent,
-# and the agent earns rewards for completing it correctly.
-# ──────────────────────────────────────────────
-TASKS = [
-    {
-        "id": "task_1",
-        "description": (
-            "Create a product named 'Wireless Mouse' with SKU 'WM-001', "
-            "price 29.99, and stock_quantity 100. "
-            "Then verify it exists by listing all products."
-        ),
-    },
-    {
-        "id": "task_2",
-        "description": (
-            "First list all products. Then create an order for customer "
-            "'Alice Johnson' (alice@example.com) with 2 units of product_id 1. "
-            "Finally, get the order summary."
-        ),
-    },
-    {
-        "id": "task_3",
-        "description": (
-            "Search for products with the word 'Mouse' in their name. "
-            "Then update the first matching product to have a new price of 24.99."
-        ),
-    },
-]
-
-
-class InventoryEnvironment:
+class InventoryEnvironment(MCPEnvironment):
     """
-    The OpenEnv Environment for Inventory Management.
+    OpenEnv environment for the Inventory Management API.
 
-    This is the main class that an RL training framework interacts with.
-    It implements the 3 standard OpenEnv methods:
+    This class:
+    - Inherits from MCPEnvironment (OpenEnv's base class)
+    - Defines 10 tools using FastMCP decorators
+    - Each tool calls the real Inventory API via HTTP
+    - Tracks episode state (step count, reward)
 
-    1. reset()  → Start a fresh episode, give the agent a task
-    2. step()   → Process one agent action, return observation + reward
-    3. state()  → Return current episode state
-
-    The reward logic:
-      +1.0  → Successful API call
-      +2.0  → BONUS for completing the task
-      -0.5  → Failed API call (4xx/5xx error)
-      -1.0  → Invalid tool name or exception
-      -0.1  → Small penalty each step (encourages efficiency)
+    The AI agent interacts with this via:
+      1. list_tools()  → discovers available tools
+      2. call_tool("create_product", name="Mouse", sku="M1", price=9.99)
+      3. OpenEnv handles all the WebSocket/HTTP plumbing automatically
     """
 
-    def __init__(self, api_base_url: str = "http://localhost:8000"):
-        """
-        Initialize the environment.
+    def __init__(self):
+        """Initialize the environment with FastMCP tools."""
 
-        Args:
-            api_base_url: URL where your original Inventory API is running.
-                          This wrapper will make HTTP calls to this URL.
-        """
-        self.api_base_url = api_base_url
-        self.current_state: InventoryState | None = None
-        self.http_client: httpx.AsyncClient | None = None
-        self.action_history: list[dict] = []
+        # Create the MCP server — this is OpenEnv's tool registry
+        mcp = FastMCP("inventory_env")
 
-    async def startup(self):
-        """Create the HTTP client. Called when the server starts."""
-        self.http_client = httpx.AsyncClient(
-            base_url=self.api_base_url,
-            timeout=30.0,
+        # HTTP client for calling the real Inventory API
+        self._http_client = httpx.Client(
+            base_url=INVENTORY_API_URL, timeout=30.0
         )
 
-    async def shutdown(self):
-        """Close the HTTP client. Called when the server stops."""
-        if self.http_client:
-            await self.http_client.aclose()
+        # Episode tracking
+        self._state = State(episode_id=str(uuid4()), step_count=0)
+        self._total_reward = 0.0
+        self._action_history: List[str] = []
 
-    # ──────────────────────────────────────────
-    # reset() — Start a fresh episode
-    # ──────────────────────────────────────────
-    async def reset(self, task_index: int = 0) -> dict:
+        # ────────────────────────────────────────────────
+        # Define all tools using FastMCP decorators
+        # These are auto-discovered by OpenEnv's MCPEnvironment
+        # ────────────────────────────────────────────────
+
+        @mcp.tool
+        def create_product(
+            name: str, sku: str, price: float,
+            description: str = "", stock_quantity: int = 0
+        ) -> dict:
+            """
+            Create a new product in the inventory.
+
+            Args:
+                name: Product name (e.g., "Wireless Mouse")
+                sku: Stock Keeping Unit — unique identifier (e.g., "WM-001")
+                price: Product price (must be > 0)
+                description: Optional product description
+                stock_quantity: Initial stock count (default: 0)
+
+            Returns:
+                The created product with its ID, timestamps, etc.
+            """
+            resp = self._http_client.post("/products", json={
+                "name": name, "sku": sku, "price": price,
+                "description": description, "stock_quantity": stock_quantity
+            })
+            resp.raise_for_status()
+            return resp.json()
+
+        @mcp.tool
+        def list_products(active_only: bool = True) -> list:
+            """
+            List all products in the inventory.
+
+            Args:
+                active_only: If True, only return active products (default: True)
+
+            Returns:
+                List of product objects
+            """
+            resp = self._http_client.get(
+                "/products", params={"active_only": active_only}
+            )
+            resp.raise_for_status()
+            return resp.json()
+
+        @mcp.tool
+        def get_product(product_id: int) -> dict:
+            """
+            Get details of a specific product by its ID.
+
+            Args:
+                product_id: The numeric ID of the product
+
+            Returns:
+                Product details including name, sku, price, stock, etc.
+            """
+            resp = self._http_client.get(f"/products/{product_id}")
+            resp.raise_for_status()
+            return resp.json()
+
+        @mcp.tool
+        def search_products(query: str) -> list:
+            """
+            Search for products by name or description.
+
+            Args:
+                query: Search term to match against product name/description
+
+            Returns:
+                List of matching product objects
+            """
+            resp = self._http_client.get("/products/search", params={"q": query})
+            resp.raise_for_status()
+            return resp.json()
+
+        @mcp.tool
+        def update_product(
+            product_id: int,
+            name: str = None,
+            description: str = None,
+            price: float = None,
+            stock_quantity: int = None,
+            is_active: bool = None,
+        ) -> dict:
+            """
+            Update an existing product's details.
+
+            Args:
+                product_id: The numeric ID of the product to update
+                name: New product name (optional)
+                description: New description (optional)
+                price: New price (optional)
+                stock_quantity: New stock count (optional)
+                is_active: Whether the product is active (optional)
+
+            Returns:
+                The updated product object
+            """
+            update_data = {}
+            if name is not None:
+                update_data["name"] = name
+            if description is not None:
+                update_data["description"] = description
+            if price is not None:
+                update_data["price"] = price
+            if stock_quantity is not None:
+                update_data["stock_quantity"] = stock_quantity
+            if is_active is not None:
+                update_data["is_active"] = is_active
+
+            resp = self._http_client.patch(
+                f"/products/{product_id}", json=update_data
+            )
+            resp.raise_for_status()
+            return resp.json()
+
+        @mcp.tool
+        def create_order(
+            customer_name: str,
+            customer_email: str,
+            items: list,
+        ) -> dict:
+            """
+            Create a new order.
+
+            Args:
+                customer_name: Name of the customer placing the order
+                customer_email: Customer's email address
+                items: List of order items, each with 'product_id' and 'quantity'
+                       Example: [{"product_id": 1, "quantity": 2}]
+
+            Returns:
+                The created order with ID, total amount, status, etc.
+            """
+            resp = self._http_client.post("/orders", json={
+                "customer_name": customer_name,
+                "customer_email": customer_email,
+                "items": items,
+            })
+            resp.raise_for_status()
+            return resp.json()
+
+        @mcp.tool
+        def list_orders(
+            status: str = None,
+        ) -> list:
+            """
+            List all orders, optionally filtered by status.
+
+            Args:
+                status: Filter by order status (e.g., "pending", "completed")
+
+            Returns:
+                List of order objects
+            """
+            params = {}
+            if status is not None:
+                params["status"] = status
+            resp = self._http_client.get("/orders", params=params)
+            resp.raise_for_status()
+            return resp.json()
+
+        @mcp.tool
+        def get_order(order_id: int) -> dict:
+            """
+            Get details of a specific order by its ID.
+
+            Args:
+                order_id: The numeric ID of the order
+
+            Returns:
+                Order details including items, total, status, etc.
+            """
+            resp = self._http_client.get(f"/orders/{order_id}")
+            resp.raise_for_status()
+            return resp.json()
+
+        @mcp.tool
+        def get_order_detail(order_id: int) -> dict:
+            """
+            Get full detail of an order including item breakdown.
+
+            Args:
+                order_id: The numeric ID of the order
+
+            Returns:
+                Detailed order info with individual item details
+            """
+            resp = self._http_client.get(f"/orders/{order_id}/detail")
+            resp.raise_for_status()
+            return resp.json()
+
+        @mcp.tool
+        def get_order_summary(order_id: int) -> dict:
+            """
+            Get a summary of an order (customer, total, item count, status).
+
+            Args:
+                order_id: The numeric ID of the order
+
+            Returns:
+                Order summary with customer_name, total, item_count, status
+            """
+            resp = self._http_client.get(f"/orders/{order_id}/summary")
+            resp.raise_for_status()
+            return resp.json()
+
+        # ── Pass MCP server to the base class ──
+        # This is the KEY line — MCPEnvironment auto-discovers all @mcp.tool
+        # functions and makes them available via list_tools() / call_tool()
+        super().__init__(mcp)
+
+    def reset(
+        self,
+        seed: Optional[int] = None,
+        episode_id: Optional[str] = None,
+        **kwargs: Any,
+    ) -> Observation:
         """
-        Start a brand new episode.
+        Reset the environment for a new episode.
 
-        What happens:
-        1. Creates a new unique episode_id
-        2. Resets the step counter and reward to 0
-        3. Picks a task for the agent to complete
-        4. Returns the initial observation (with the task instructions)
-
-        Args:
-            task_index: Which task to give the agent (0, 1, or 2)
+        This is called at the start of each training episode.
+        It resets the step counter, reward, and action history.
 
         Returns:
-            dict with "observation" and "state"
+            Observation with done=False, indicating the episode has started.
         """
-        task = TASKS[task_index % len(TASKS)]
-
-        self.current_state = InventoryState(
-            episode_id=str(uuid.uuid4()),
+        self._state = State(
+            episode_id=episode_id or str(uuid4()),
             step_count=0,
-            total_reward=0.0,
-            product_count=0,
-            order_count=0,
-            task_description=task["description"],
-            task_completed=False,
-            max_steps=10,
         )
+        self._total_reward = 0.0
+        self._action_history = []
 
-        self.action_history = []
-
-        # Build initial observation — this is what the agent "sees" first
-        observation = InventoryObservation(
-            success=True,
-            data={
-                "message": "Environment ready. Complete the following task.",
-                "task": task["description"],
-                "hint": "Use the available_tools to interact with the Inventory API.",
+        return Observation(
+            done=False,
+            reward=0.0,
+            metadata={
+                "status": "ready",
+                "message": "Inventory environment ready. Use list_tools() to discover available tools.",
+                "available_tools": [
+                    "create_product", "list_products", "get_product",
+                    "search_products", "update_product", "create_order",
+                    "list_orders", "get_order", "get_order_detail",
+                    "get_order_summary",
+                ],
             },
         )
 
-        logger.info(
-            f"Episode {self.current_state.episode_id} started — Task: {task['id']}"
+    def _step_impl(
+        self,
+        action: Action,
+        timeout_s: Optional[float] = None,
+        **kwargs: Any,
+    ) -> Observation:
+        """
+        Handle non-MCP actions (fallback).
+
+        MCPEnvironment routes ListToolsAction and CallToolAction automatically.
+        This method is only called for unknown/unsupported action types.
+        """
+        return Observation(
+            done=False,
+            reward=0.0,
+            metadata={
+                "error": f"Unknown action type: {type(action).__name__}. "
+                "Use ListToolsAction or CallToolAction for interacting with this environment."
+            },
         )
 
-        return {
-            "observation": observation.model_dump(),
-            "state": self.current_state.model_dump(),
-        }
-
-    # ──────────────────────────────────────────
-    # step() — Process one agent action
-    # ──────────────────────────────────────────
-    async def step(self, action: InventoryAction) -> dict:
+    def step(
+        self,
+        action: Action,
+        timeout_s: Optional[float] = None,
+        **kwargs: Any,
+    ) -> Observation:
         """
-        Process one action from the agent.
+        Execute a step in the environment.
 
-        What happens:
-        1. Validate the tool name
-        2. Translate the action into an HTTP call to your Inventory API
-        3. Get the response
-        4. Compute a reward (how well did the agent do?)
-        5. Check if the episode is done
-        6. Return everything
-
-        Args:
-            action: The agent's action (which tool + parameters)
-
-        Returns:
-            dict with "observation", "reward", "done", "state"
+        Delegates MCP actions (list_tools, call_tool) to the base class.
+        Tracks step count and action history.
         """
-        if self.current_state is None:
-            return {
-                "observation": InventoryObservation(
-                    success=False,
-                    error="Environment not initialized. Call reset() first.",
-                ).model_dump(),
-                "reward": -1.0,
-                "done": True,
-                "state": None,
-            }
+        # Track step count
+        self._state.step_count += 1
 
-        self.current_state.step_count += 1
+        # Record action in history
+        action_name = getattr(action, "tool_name", type(action).__name__)
+        self._action_history.append(action_name)
 
-        # Record what the agent did (for debugging/analysis)
-        self.action_history.append({
-            "step": self.current_state.step_count,
-            "tool": action.tool,
-            "parameters": action.parameters,
-        })
+        # Delegate to MCPEnvironment (handles list_tools & call_tool)
+        observation = super().step(action, timeout_s=timeout_s, **kwargs)
 
-        # ── CHECK 1: Is the tool valid? ──
-        if action.tool not in TOOL_REGISTRY:
-            observation = InventoryObservation(
-                success=False,
-                error=(
-                    f"Unknown tool: '{action.tool}'. "
-                    f"Available tools: {AVAILABLE_TOOLS}"
-                ),
-            )
-            reward = -1.0  # Harsh penalty for using a tool that doesn't exist
-            done = self.current_state.step_count >= self.current_state.max_steps
-            self.current_state.total_reward += reward
-            logger.warning(f"Step {self.current_state.step_count}: Invalid tool '{action.tool}'")
-            return {
-                "observation": observation.model_dump(),
-                "reward": reward,
-                "done": done,
-                "state": self.current_state.model_dump(),
-            }
+        return observation
 
-        # ── EXECUTE: Call your Inventory API ──
-        method, path_template = TOOL_REGISTRY[action.tool]
+    @property
+    def state(self) -> State:
+        """Get the current environment state."""
+        return self._state
 
-        try:
-            # Build the URL path (replace {product_id}, {order_id}, etc.)
-            path = path_template
-            params = dict(action.parameters)  # copy so we don't mutate
-
-            # Extract path parameters (e.g., product_id=1 → /products/1)
-            for key in list(params.keys()):
-                placeholder = f"{{{key}}}"
-                if placeholder in path:
-                    path = path.replace(placeholder, str(params.pop(key)))
-
-            # Make the HTTP call to your existing Inventory API
-            if method == "GET":
-                response = await self.http_client.get(path, params=params)
-            elif method == "POST":
-                response = await self.http_client.post(path, json=params)
-            elif method == "PATCH":
-                response = await self.http_client.patch(path, json=params)
-            else:
-                raise ValueError(f"Unsupported HTTP method: {method}")
-
-            # ── BUILD OBSERVATION from API response ──
-            if response.status_code < 400:
-                data = response.json()
-                observation = InventoryObservation(success=True, data=data)
-                reward = 1.0  # Successful API call = positive reward
-
-                logger.info(
-                    f"Step {self.current_state.step_count}: "
-                    f"{action.tool} → SUCCESS (HTTP {response.status_code})"
-                )
-            else:
-                error_text = response.text[:200]  # Truncate long errors
-                observation = InventoryObservation(
-                    success=False,
-                    error=f"API returned HTTP {response.status_code}: {error_text}",
-                )
-                reward = -0.5  # Penalty for bad API call
-
-                logger.warning(
-                    f"Step {self.current_state.step_count}: "
-                    f"{action.tool} → FAILED (HTTP {response.status_code})"
-                )
-
-        except Exception as exc:
-            observation = InventoryObservation(
-                success=False,
-                error=f"Exception: {str(exc)}",
-            )
-            reward = -1.0  # Harsh penalty for crashing
-            logger.error(f"Step {self.current_state.step_count}: Exception — {exc}")
-
-        # ── STEP PENALTY: Small cost per step to encourage efficiency ──
-        reward -= 0.1
-
-        # ── CHECK: Is the episode done? ──
-        done = self.current_state.step_count >= self.current_state.max_steps
-
-        # Update state
-        self.current_state.total_reward += reward
-
-        return {
-            "observation": observation.model_dump(),
-            "reward": round(reward, 2),
-            "done": done,
-            "state": self.current_state.model_dump(),
-        }
-
-    # ──────────────────────────────────────────
-    # state() — Get current episode state
-    # ──────────────────────────────────────────
-    async def state(self) -> dict:
-        """
-        Return the current state of the episode.
-
-        This lets the agent (or monitoring tools) check:
-        - How many steps have been taken
-        - What the total reward is
-        - Whether the task is complete
-        """
-        if self.current_state is None:
-            return {"state": None, "message": "No active episode. Call reset() first."}
-        return {
-            "state": self.current_state.model_dump(),
-            "action_history": self.action_history,
-        }
+    def close(self) -> None:
+        """Clean up resources."""
+        self._http_client.close()
+        super().close()
