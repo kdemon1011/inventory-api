@@ -1,32 +1,56 @@
-# Inventory API — OpenEnv Environment
+# RL Gyms — OpenEnv Environments
 
-An inventory management API wrapped as an [OpenEnv](https://github.com/meta-pytorch/OpenEnv) environment, allowing AI agents to interact with products and orders through the standard `reset → step → observe` protocol.
+A collection of reinforcement learning environments built on Meta's [OpenEnv](https://github.com/meta-pytorch/OpenEnv) framework. Each gym wraps a real API as an MCP-based environment that AI agents can interact with through the standard `reset → step → observe` protocol.
 
-## Architecture
+## How It Works
+
+Each gym has three components:
+
+1. **The API** — a real FastAPI service (e.g., inventory management with products and orders)
+2. **The OpenEnv Server** — wraps the API as an MCP environment, exposing tools via WebSocket
+3. **The Client** — connects to the OpenEnv server to discover and call tools
 
 ```
-AI Agent (MCPToolClient) --WebSocket--> OpenEnv Server (port 9000) --HTTP--> Inventory API (port 8000)
+AI Agent / RL Trainer
+        │
+        │  WebSocket (port 9000)
+        ▼
+OpenEnv Server (MCPEnvironment + create_app)
+        │
+        │  HTTP (port 8000)
+        ▼
+Real API (FastAPI + Database)
 ```
 
-The Inventory API (FastAPI + SQLite) runs as a standalone service. The OpenEnv environment wraps it by exposing 10 MCP tools — one for each API operation — so an agent can discover and invoke them through OpenEnv's standard interface.
+The agent doesn't call the API directly. Instead, it uses OpenEnv's `list_tools()` to discover available actions and `call_tool()` to execute them. This gives the agent a consistent interface across any gym.
 
-## Why MCP?
+## Repository Structure
 
-OpenEnv supports MCP (Model Context Protocol) environments where each action the agent can take is defined as a **tool** using `@mcp.tool` decorators. This means:
-
-- The agent doesn't need to know the API routes upfront — it calls `list_tools()` to discover them
-- Each tool has a typed schema (name, description, parameters) that an LLM can reason about
-- OpenEnv handles all the WebSocket/HTTP plumbing, serialisation, and session management automatically
-
-## How It Connects
-
-| File | Role | OpenEnv Class Used |
-|---|---|---|
-| `server/inventory_environment.py` | Defines 10 tools (CRUD products + orders) | `MCPEnvironment` |
-| `server/app.py` | Auto-generates the server with all routes | `create_app()` |
-| `client.py` | WebSocket client for agents/scripts | `MCPToolClient` |
-| `models.py` | Re-exports OpenEnv MCP types | — |
-| `openenv.yaml` | Environment manifest | — |
+```
+├── inventory/                  ← Inventory Management gym
+│   ├── main.py                 ← FastAPI app (products + orders)
+│   ├── server/                 ← OpenEnv environment + server
+│   ├── client.py               ← MCPToolClient wrapper
+│   ├── models/                 ← SQLAlchemy models
+│   ├── routers/                ← API route handlers
+│   ├── schemas/                ← Pydantic schemas
+│   ├── services/               ← Business logic
+│   ├── tests/                  ← API unit tests
+│   └── README.md               ← Gym-specific docs
+│
+├── rewards/                    ← Shared reward system
+│   ├── base.py                 ← RewardCalculator (gym-agnostic)
+│   └── inventory_checks.py     ← Inventory ground truth verification
+│
+├── scenarios/                  ← Scenario definitions per gym
+│   └── inventory.py            ← Inventory scenarios (3 scenarios)
+│
+├── tests/                      ← OpenEnv integration tests
+│   └── test_inventory_openenv.py
+│
+├── requirements.txt            ← Shared dependencies
+└── pytest.ini                  ← Pytest configuration
+```
 
 ## Setup
 
@@ -38,38 +62,50 @@ source /home/kdemon/Clients/personal_python_env/bin/activate
 pip install -r requirements.txt
 ```
 
-## Running
+### Dependencies
 
-You need **two terminals**:
+- `openenv-core>=0.2.1` — Meta's OpenEnv framework
+- `fastmcp>=0.2.0` — MCP tool definitions
+- `fastapi`, `uvicorn` — API server
+- `httpx` — HTTP client for tool→API calls
+- `sqlalchemy`, `aiosqlite` — Database
+
+## Running a Gym
+
+Each gym needs **two processes**: the API and the OpenEnv server.
+
+### Inventory Gym
 
 ```bash
-# Terminal 1 — Start the Inventory API
-python main.py
+# Terminal 1 — Start the Inventory API (port 8000)
+cd inventory && python main.py
+
+# Terminal 2 — Start the OpenEnv server (port 9000)
+cd inventory && python server/app.py
 ```
+
+### Run the Integration Test (from repo root)
 
 ```bash
-# Terminal 2 — Start the OpenEnv server
-python server/app.py
+python tests/test_inventory_openenv.py
 ```
 
-## Usage
+This runs all scenarios, verifies outcomes against the real database, and prints a reward breakdown for each.
+
+### Quick Usage Example
 
 ```python
-from client import InventoryEnv
+from inventory.client import InventoryEnv
 from openenv.core.env_server.mcp_types import CallToolAction
 
 with InventoryEnv(base_url="http://localhost:9000") as env:
-    # Start a new episode
     env.reset()
 
-    # Discover available tools
+    # Discover tools
     tools = env.list_tools()
-    for t in tools:
-        print(f"{t.name}: {t.description}")
 
     # Call a tool
     result = env.call_tool("list_products", active_only=True)
-    print(result)
 
     # For tools with a 'name' parameter, use step() directly
     env.step(CallToolAction(
@@ -78,24 +114,35 @@ with InventoryEnv(base_url="http://localhost:9000") as env:
     ))
 ```
 
-## Testing
+## Reward System
 
-```bash
-# Both servers must be running first
-python test_openenv.py
-```
+The reward calculator (`rewards/base.py`) is **gym-agnostic** — it works with any gym. It computes an episode-level reward from 4 components:
 
-## Available Tools
+| Component | Weight | What it checks |
+|---|---|---|
+| **Structural** | 0.20 | Did the agent call the right tools? (F1 score + execution success) |
+| **Ground Truth** | 0.45 | Does the database state match the expected outcome? |
+| **Consistency** | 0.25 | Does the agent's claim match reality? (anti-hallucination) |
+| **Efficiency** | 0.10 | Did the agent solve it in a reasonable number of steps? |
 
-| Tool | Description |
-|---|---|
-| `create_product` | Create a new product |
-| `list_products` | List all products |
-| `get_product` | Get product by ID |
-| `search_products` | Search products by name/description |
-| `update_product` | Update product details |
-| `create_order` | Create a new order |
-| `list_orders` | List orders (optionally filtered) |
-| `get_order` | Get order by ID |
-| `get_order_detail` | Get order with item breakdown |
-| `get_order_summary` | Get order summary |
+A **hallucination penalty** (-1.0) is applied if all tool calls "succeeded" but the database shows nothing actually happened.
+
+Each gym provides its own:
+- **Checker** (`rewards/<gym>_checks.py`) — verifies ground truth against the API/DB
+- **Scenarios** (`scenarios/<gym>.py`) — defines tasks with expected tools and outcome checks
+
+## Adding a New Gym
+
+1. Create a folder: `my_gym/` with your API, OpenEnv environment, and client
+2. Add `rewards/my_gym_checks.py` — ground truth verification (DB/API queries)
+3. Add `scenarios/my_gym.py` — scenario definitions with expected outcomes
+4. Add `tests/test_my_gym_openenv.py` — integration test
+5. Add `my_gym/README.md` — gym-specific documentation
+
+The `RewardCalculator`, `EpisodeLog`, `Scenario`, and `RewardBreakdown` classes from `rewards/base.py` work with any gym — no modifications needed.
+
+## Available Gyms
+
+| Gym | Description | Tools | Status |
+|---|---|---|---|
+| `inventory/` | Inventory management (products + orders) | 10 | ✅ Active |
