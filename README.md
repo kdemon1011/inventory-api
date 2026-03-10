@@ -4,52 +4,44 @@ A collection of reinforcement learning environments built on Meta's [OpenEnv](ht
 
 ## How It Works
 
-Each gym has three components:
-
-1. **The API** — a real FastAPI service (e.g., inventory management with products and orders)
-2. **The OpenEnv Server** — wraps the API as an MCP environment, exposing tools via WebSocket
-3. **The Client** — connects to the OpenEnv server to discover and call tools
-
 ```
-AI Agent / RL Trainer
-        │
-        │  WebSocket (port 9000)
-        ▼
-OpenEnv Server (MCPEnvironment + create_app)
-        │
-        │  HTTP (port 8000)
-        ▼
-Real API (FastAPI + Database)
+┌─────────────────┐         ┌──────────────────┐         ┌──────────────────┐
+│  LLM            │         │  Agent Runner     │         │  OpenEnv Server  │
+│  (GPT/Claude/   │ ──────► │  (gym-agnostic)   │ ──────► │  (per gym)       │
+│   Ollama)       │         │                   │         │                  │
+└─────────────────┘         └──────────────────┘         └──────────────────┘
+   Decides WHAT              Sends to OpenEnv              Routes to real API
+   to do (reasoning)         via env.step()                (database, etc.)
 ```
 
-The agent doesn't call the API directly. Instead, it uses OpenEnv's `list_tools()` to discover available actions and `call_tool()` to execute them. This gives the agent a consistent interface across any gym.
+The LLM **never calls tools directly**. It connects to OpenEnv, discovers available tools via `list_tools()`, reasons about what to do, and the agent runner routes each decision through `env.step()`. OpenEnv handles the actual API calls.
 
 ## Repository Structure
 
 ```
-├── inventory/                  ← Inventory Management gym
-│   ├── main.py                 ← FastAPI app (products + orders)
-│   ├── server/                 ← OpenEnv environment + server
-│   ├── client.py               ← MCPToolClient wrapper
-│   ├── models/                 ← SQLAlchemy models
-│   ├── routers/                ← API route handlers
-│   ├── schemas/                ← Pydantic schemas
-│   ├── services/               ← Business logic
-│   ├── tests/                  ← API unit tests
-│   └── README.md               ← Gym-specific docs
+├── agent/                     ← LLM Agent (gym-agnostic)
+│   ├── llm.py                 ← LiteLLM wrapper (GPT, Claude, Ollama, etc.)
+│   └── runner.py              ← Agent loop: LLM ↔ OpenEnv
 │
-├── rewards/                    ← Shared reward system
-│   ├── base.py                 ← RewardCalculator (gym-agnostic)
-│   └── inventory_checks.py     ← Inventory ground truth verification
+├── inventory/                 ← Inventory Management gym
+│   ├── main.py                ← FastAPI app (products + orders)
+│   ├── server/                ← OpenEnv environment + server
+│   ├── client.py              ← MCPToolClient wrapper
+│   └── README.md              ← Gym-specific docs
 │
-├── scenarios/                  ← Scenario definitions per gym
-│   └── inventory.py            ← Inventory scenarios (3 scenarios)
+├── rewards/                   ← Shared reward system
+│   ├── base.py                ← RewardCalculator (gym-agnostic)
+│   └── inventory_checks.py    ← Inventory ground truth verification
 │
-├── tests/                      ← OpenEnv integration tests
+├── scenarios/                 ← Scenario definitions per gym
+│   └── inventory.py           ← Inventory scenarios
+│
+├── tests/                     ← Manual integration tests (debugging)
 │   └── test_inventory_openenv.py
 │
-├── requirements.txt            ← Shared dependencies
-└── pytest.ini                  ← Pytest configuration
+├── run_eval.py                ← CLI entry point: evaluate LLM on a gym
+├── .env                       ← API keys + model config
+└── requirements.txt
 ```
 
 ## Setup
@@ -62,87 +54,103 @@ source /home/kdemon/Clients/personal_python_env/bin/activate
 pip install -r requirements.txt
 ```
 
-### Dependencies
+### API Keys
 
-- `openenv-core>=0.2.1` — Meta's OpenEnv framework
-- `fastmcp>=0.2.0` — MCP tool definitions
-- `fastapi`, `uvicorn` — API server
-- `httpx` — HTTP client for tool→API calls
-- `sqlalchemy`, `aiosqlite` — Database
+Add your keys to the root `.env` file:
 
-## Running a Gym
+```env
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+```
 
-Each gym needs **two processes**: the API and the OpenEnv server.
+For local models (Ollama), no API key needed — just install and run Ollama:
+```bash
+ollama serve
+ollama pull llama3
+```
 
-### Inventory Gym
+## Running an Evaluation
+
+### 1. Start the gym servers
+
+Each gym needs two processes: the API and the OpenEnv server.
 
 ```bash
-# Terminal 1 — Start the Inventory API (port 8000)
+# Terminal 1 — Inventory API (port 8000)
 cd inventory && python main.py
 
-# Terminal 2 — Start the OpenEnv server (port 9000)
+# Terminal 2 — OpenEnv server (port 9000)
 cd inventory && python server/app.py
 ```
 
-### Run the Integration Test (from repo root)
+### 2. Run the LLM evaluation
 
 ```bash
-python tests/test_inventory_openenv.py
+# Evaluate with OpenAI GPT-4o
+python run_eval.py --gym inventory --model gpt-4o
+
+# Evaluate with Anthropic Claude
+python run_eval.py --gym inventory --model claude-sonnet-4-20250514
+
+# Evaluate with local Ollama model
+python run_eval.py --gym inventory --model ollama/llama3
+
+# Run a specific scenario only
+python run_eval.py --gym inventory --model gpt-4o --scenario create_product
+
+# Verbose mode (see LLM reasoning)
+python run_eval.py --gym inventory --model gpt-4o -v
 ```
 
-This runs all scenarios, verifies outcomes against the real database, and prints a reward breakdown for each.
+### CLI Options
 
-### Quick Usage Example
-
-```python
-from inventory.client import InventoryEnv
-from openenv.core.env_server.mcp_types import CallToolAction
-
-with InventoryEnv(base_url="http://localhost:9000") as env:
-    env.reset()
-
-    # Discover tools
-    tools = env.list_tools()
-
-    # Call a tool
-    result = env.call_tool("list_products", active_only=True)
-
-    # For tools with a 'name' parameter, use step() directly
-    env.step(CallToolAction(
-        tool_name="create_product",
-        arguments={"name": "Mouse", "sku": "M-001", "price": 9.99},
-    ))
-```
+| Option | Default | Description |
+|---|---|---|
+| `--gym` | required | Which gym to evaluate (`inventory`, etc.) |
+| `--model` | `gpt-4o` | LiteLLM model string |
+| `--scenario` | all | Run a specific scenario by ID |
+| `--openenv-url` | from gym config | OpenEnv server URL |
+| `--api-url` | from gym config | API URL for ground truth checks |
+| `--temperature` | `0.0` | LLM sampling temperature |
+| `--max-tokens` | `1024` | Max tokens per LLM response |
+| `-v` | off | Verbose/debug logging |
 
 ## Reward System
 
-The reward calculator (`rewards/base.py`) is **gym-agnostic** — it works with any gym. It computes an episode-level reward from 4 components:
+The reward calculator (`rewards/base.py`) is **gym-agnostic**. It computes an episode-level reward from 3 components:
 
 | Component | Weight | What it checks |
 |---|---|---|
-| **Structural** | 0.20 | Did the agent call the right tools? (F1 score + execution success) |
-| **Ground Truth** | 0.45 | Does the database state match the expected outcome? |
-| **Consistency** | 0.25 | Does the agent's claim match reality? (anti-hallucination) |
-| **Efficiency** | 0.10 | Did the agent solve it in a reasonable number of steps? |
+| **Structural** | 0.25 | Did the agent call the right tools? (F1 + success rate) |
+| **Ground Truth** | 0.60 | Does the database state match expected outcome? (source of truth) |
+| **Efficiency** | 0.15 | Did the agent solve it in a reasonable number of steps? |
 
 A **hallucination penalty** (-1.0) is applied if all tool calls "succeeded" but the database shows nothing actually happened.
-
-Each gym provides its own:
-- **Checker** (`rewards/<gym>_checks.py`) — verifies ground truth against the API/DB
-- **Scenarios** (`scenarios/<gym>.py`) — defines tasks with expected tools and outcome checks
 
 ## Adding a New Gym
 
 1. Create a folder: `my_gym/` with your API, OpenEnv environment, and client
-2. Add `rewards/my_gym_checks.py` — ground truth verification (DB/API queries)
-3. Add `scenarios/my_gym.py` — scenario definitions with expected outcomes
-4. Add `tests/test_my_gym_openenv.py` — integration test
-5. Add `my_gym/README.md` — gym-specific documentation
+2. Add `rewards/my_gym_checks.py` — ground truth verification
+3. Add `scenarios/my_gym.py` — scenario definitions
+4. Register the gym in `run_eval.py` → `GYM_REGISTRY`
+5. Add `my_gym/README.md` — gym-specific docs
 
-The `RewardCalculator`, `EpisodeLog`, `Scenario`, and `RewardBreakdown` classes from `rewards/base.py` work with any gym — no modifications needed.
+The `agent/`, `rewards/base.py`, and `run_eval.py` work with ANY gym — no modifications needed.
 
 ## Available Gyms
 
 | Gym | Description | Tools | Status |
 |---|---|---|---|
 | `inventory/` | Inventory management (products + orders) | 10 | ✅ Active |
+
+## Supported Models
+
+Any model supported by [LiteLLM](https://docs.litellm.ai/docs/providers):
+
+| Provider | Example | Env Var |
+|---|---|---|
+| OpenAI | `gpt-4o`, `gpt-4-turbo` | `OPENAI_API_KEY` |
+| Anthropic | `claude-sonnet-4-20250514` | `ANTHROPIC_API_KEY` |
+| Ollama (local) | `ollama/llama3`, `ollama/mistral` | — (no key needed) |
+| Google | `gemini/gemini-pro` | `GEMINI_API_KEY` |
+| And 100+ more... | See LiteLLM docs | Varies |

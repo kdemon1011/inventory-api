@@ -1,11 +1,12 @@
 """
 Base reward calculator — reusable across any OpenEnv gym.
 
-Computes a 4-component episode-level reward:
-  1. Structural   (0.20) — right tools called, no errors
-  2. Ground Truth (0.45) — actual state matches expected outcome
-  3. Consistency  (0.25) — tool results match verified state
-  4. Efficiency   (0.10) — solved in reasonable number of steps
+Computes a 3-component episode-level reward:
+  1. Structural   (0.25) — right tools called, no errors
+  2. Ground Truth (0.60) — actual state matches expected outcome (source of truth)
+  3. Efficiency   (0.15) — solved in reasonable number of steps
+
+Plus a hallucination penalty (-1.0) when tools "succeed" but DB shows nothing.
 
 Usage:
     calculator = RewardCalculator()
@@ -85,7 +86,6 @@ class RewardBreakdown:
 
     structural: float = 0.0
     ground_truth: float = 0.0
-    consistency: float = 0.0
     efficiency: float = 0.0
     penalty: float = 0.0
     total: float = 0.0
@@ -93,10 +93,9 @@ class RewardBreakdown:
 
     def summary(self) -> str:
         lines = [
-            f"  Structural:   {self.structural:.2f}  (weight 0.20)",
-            f"  Ground Truth: {self.ground_truth:.2f}  (weight 0.45)",
-            f"  Consistency:  {self.consistency:.2f}  (weight 0.25)",
-            f"  Efficiency:   {self.efficiency:.2f}  (weight 0.10)",
+            f"  Structural:   {self.structural:.2f}  (weight 0.25)",
+            f"  Ground Truth: {self.ground_truth:.2f}  (weight 0.60)",
+            f"  Efficiency:   {self.efficiency:.2f}  (weight 0.15)",
         ]
         if self.penalty < 0:
             lines.append(f"  Penalty:      {self.penalty:.2f}  (hallucination)")
@@ -116,21 +115,21 @@ class RewardCalculator:
       - An EpisodeLog (what the agent did)
       - A Scenario (what the agent should have done)
       - outcome_results: List[bool] from the gym's own checker
-      - consistency_score: float from comparing tool results vs DB
+
+    The reward system is the SINGLE source of truth for scoring.
+    Ground Truth (DB verification) is the dominant component.
 
     Weights are configurable per gym.
     """
 
     def __init__(
         self,
-        w_structural: float = 0.20,
-        w_ground_truth: float = 0.45,
-        w_consistency: float = 0.25,
-        w_efficiency: float = 0.10,
+        w_structural: float = 0.25,
+        w_ground_truth: float = 0.60,
+        w_efficiency: float = 0.15,
     ):
         self.w_structural = w_structural
         self.w_ground_truth = w_ground_truth
-        self.w_consistency = w_consistency
         self.w_efficiency = w_efficiency
 
     def calculate(
@@ -138,7 +137,6 @@ class RewardCalculator:
         episode: EpisodeLog,
         scenario: Scenario,
         outcome_results: List[bool],
-        consistency_score: float = 1.0,
     ) -> RewardBreakdown:
         """
         Calculate the full reward breakdown.
@@ -147,21 +145,17 @@ class RewardCalculator:
             episode: Log of all tool calls the agent made.
             scenario: The task definition with expected tools and outcomes.
             outcome_results: List of True/False from running each outcome check.
-            consistency_score: 0-1 score from consistency verification.
-                               Defaults to 1.0 (skip) when no LLM is connected yet.
         """
         breakdown = RewardBreakdown()
 
         breakdown.structural = self._structural_score(episode, scenario)
         breakdown.ground_truth = self._ground_truth_score(outcome_results)
-        breakdown.consistency = consistency_score
         breakdown.efficiency = self._efficiency_score(episode, scenario)
         breakdown.penalty = self._hallucination_penalty(episode, outcome_results)
 
         breakdown.total = (
             self.w_structural * breakdown.structural
             + self.w_ground_truth * breakdown.ground_truth
-            + self.w_consistency * breakdown.consistency
             + self.w_efficiency * breakdown.efficiency
             + breakdown.penalty
         )

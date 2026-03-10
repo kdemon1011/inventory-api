@@ -197,7 +197,6 @@ def main():
                     episode=episode,
                     scenario=scenario,
                     outcome_results=outcome_results,
-                    consistency_score=1.0,  # No LLM yet — placeholder
                 )
 
                 print()
