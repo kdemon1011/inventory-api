@@ -1,6 +1,6 @@
 # RL Gyms — OpenEnv Environments
 
-A collection of reinforcement learning environments built on Meta's [OpenEnv](https://github.com/meta-pytorch/OpenEnv) framework. Each gym wraps a real API as an MCP-based environment that AI agents can interact with through the standard `reset → step → observe` protocol.
+A collection of reinforcement learning environments built on Meta's [OpenEnv](https://github.com/meta-pytorch/OpenEnv) framework. Each gym wraps a real API/tool as an MCP-based environment that AI agents can interact with through the standard `reset → step → observe` protocol.
 
 ## How It Works
 
@@ -10,11 +10,11 @@ A collection of reinforcement learning environments built on Meta's [OpenEnv](ht
 │  (GPT/Claude/   │ ──────► │  (gym-agnostic)  │ ──────► │  (per gym)       │
 │   Ollama)       │         │                  │         │                  │
 └─────────────────┘         └──────────────────┘         └──────────────────┘
-   Decides WHAT              Sends to OpenEnv             Routes to real API
-   to do (reasoning)         via env.step()               (database, etc.)
+   Decides WHAT              Sends to OpenEnv             Executes tools
+   to do (reasoning)         via env.step()               (API / code / browser)
 ```
 
-The LLM **never calls tools directly**. It connects to OpenEnv, discovers available tools via `list_tools()`, reasons about what to do, and the agent runner routes each decision through `env.step()`. OpenEnv handles the actual API calls.
+The LLM **never calls tools directly**. It connects to OpenEnv, discovers available tools via `list_tools()`, reasons about what to do, and the agent runner routes each decision through `env.step()`. OpenEnv handles the actual execution — whether that's an API call, code execution, or browser action.
 
 ## Repository Structure
 
@@ -26,8 +26,11 @@ The LLM **never calls tools directly**. It connects to OpenEnv, discovers availa
 ├── inventory/                 ← Inventory Management gym
 │   ├── main.py                ← FastAPI app (products + orders)
 │   ├── server/                ← OpenEnv environment + server
+│   ├── Dockerfile             ← Docker image for this gym
 │   ├── client.py              ← MCPToolClient wrapper
-│   └── README.md              ← Gym-specific docs
+│   ├── pyproject.toml         ← Package config (for openenv validate/build/uv run)
+│   ├── openenv.yaml           ← Environment manifest
+│   └── README.md              ← Gym-specific docs (how to run, tools, etc.)
 │
 ├── rewards/                   ← Shared reward system
 │   ├── base.py                ← RewardCalculator (gym-agnostic)
@@ -38,17 +41,16 @@ The LLM **never calls tools directly**. It connects to OpenEnv, discovers availa
 │
 ├── results/                   ← Evaluation results (grouped by run)
 │   └── inventory/             ← Results per gym
-│       └── run_20260311_1830.md ← Results for a specific run
+│       └── run_<timestamp>.md
 │
 ├── trajectories/              ← Detailed run logs (grouped by run)
 │   └── inventory/             ← Trajectories per gym
-│       └── run_20260311_1830/ ← One JSON per model within the run
-│           └── gpt-4o.json
+│       └── run_<timestamp>/   ← One JSON per model
 │
-├── tests/                     ← Manual integration tests (debugging)
+├── tests/                     ← Manual integration tests
 │   └── test_inventory_openenv.py
 │
-├── run_eval.py                ← CLI entry point: evaluate LLM on a gym
+├── run_eval.py                ← CLI: evaluate LLM on a gym
 ├── .env                       ← API keys + model config
 └── requirements.txt
 ```
@@ -72,54 +74,44 @@ OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-For local models (Ollama), no API key needed — just install and run Ollama:
+## Running a Gym
+
+Each gym can run via **Docker** (preferred) or **locally** using `uv run server`. Docker is the standard OpenEnv deployment method — it packages the backend and OpenEnv server into a single container.
+
+For detailed setup and run instructions, see each gym's own README:
+
+| Gym | Type | README | Status |
+|---|---|---|---|
+| `inventory/` | API-based | [`inventory/README.md`](inventory/README.md) | Active |
+
+### Quick Start (Docker)
 
 ```bash
-ollama serve
-ollama pull llama3
+openenv build inventory/
+docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
+```
+
+### Validate
+
+```bash
+openenv validate inventory/
 ```
 
 ## Running an Evaluation
 
-### 1. Start the gym servers
-
-Each gym needs two processes: the API and the OpenEnv server.
-
 ```bash
-# Terminal 1 — Inventory API (port 8000)
-cd inventory && python main.py
-
-# Terminal 2 — OpenEnv server (port 9000)
-cd inventory && python -m uvicorn server.app:app --host 0.0.0.0 --port 9000
-```
-
-### 2. Run the LLM evaluation
-
-```bash
-# Evaluate with OpenAI GPT-4o (all scenarios)
+# Evaluate a model on all scenarios
 python run_eval.py --gym inventory --model gpt-4o
 
-# Evaluate with Anthropic Claude
-python run_eval.py --gym inventory --model claude-sonnet-4-6
-
-# Evaluate with local Ollama model
-python run_eval.py --gym inventory --model ollama/llama3
-
-# Run a specific scenario only
-python run_eval.py --gym inventory --model gpt-4o --scenario create_product
-
-# Save results + trajectory (auto-generates run ID like run_20260311_1500)
+# Save results + trajectory
 python run_eval.py --gym inventory --model gpt-4o --save --trajectory
 
-# Use a specific run ID to group multiple model runs together
+# Group runs together with a shared run ID
 python run_eval.py --gym inventory --model gpt-4o --save --trajectory --run-id run_20260311_1830
 python run_eval.py --gym inventory --model claude-sonnet-4-6 --save --trajectory --run-id run_20260311_1830
-
-# Verbose mode (see LLM reasoning + step details)
-python run_eval.py --gym inventory --model gpt-4o -v
 ```
 
-> **Note**: Some models require `--temperature 1.0` (e.g., `gpt-5`, `gpt-5.4`, `o3-mini`, `o3-pro`, `o4-mini`).
+> Some models require `--temperature 1.0` (e.g., `gpt-5`, `gpt-5.4`, `o3-mini`, `o3-pro`, `o4-mini`).
 
 ### CLI Options
 
@@ -157,33 +149,24 @@ When `--trajectory` is passed, a detailed JSON file is saved per model:
 trajectories/<gym>/<run_id>/<model>.json
 ```
 
-Each file contains:
-- **Run metadata** — `run_id`, model, gym, timestamp, temperature
-- **Per-scenario trajectories** — step-by-step tool calls with arguments, results, timestamps, and elapsed time
-- **Outcome checks** — which ground truth checks passed/failed
-- **Reward breakdown** — structural, ground truth, efficiency, penalty, total
-
-Multiple runs (with different `--run-id`) coexist in separate folders, allowing easy comparison.
+Each file contains run metadata, per-scenario step-by-step tool calls (arguments, results, timestamps), outcome checks, and reward breakdowns.
 
 ## Evaluation Results
 
-Results are grouped by run: `results/<gym>/<run_id>.md`. See [`results/inventory/run_20260311_1830.md`](results/inventory/run_20260311_1830.md) for evaluation results across 16 LLM models on the inventory gym.
+Results are grouped by run: `results/<gym>/<run_id>.md`. See [`results/inventory/run_20260311_1830.md`](results/inventory/run_20260311_1830.md) for evaluation results across 16 LLM models.
 
 ## Adding a New Gym
 
-1. Create a folder: `my_gym/` with your API, OpenEnv environment, and client
-2. Add `rewards/my_gym_checks.py` — ground truth verification
-3. Add `scenarios/my_gym.py` — scenario definitions
-4. Register the gym in `run_eval.py` → `GYM_REGISTRY`
-5. Add `my_gym/README.md` — gym-specific docs
+1. Create a folder: `my_gym/` with your backend, OpenEnv environment (`server/`), `Dockerfile`, and client
+2. Add `my_gym/pyproject.toml` — package config with `openenv-core` dependency and `server` entry point
+3. Generate lock file: `cd my_gym && uv lock`
+4. Add `rewards/my_gym_checks.py` — ground truth verification
+5. Add `scenarios/my_gym.py` — scenario definitions
+6. Register the gym in `run_eval.py` → `GYM_REGISTRY`
+7. Add `my_gym/README.md` — detailed gym-specific docs (architecture, how to run, tools, etc.)
+8. Validate: `openenv validate my_gym/`
 
 The `agent/`, `rewards/base.py`, and `run_eval.py` work with ANY gym — no modifications needed.
-
-## Available Gyms
-
-| Gym | Description | Tools | Scenarios | Status |
-|---|---|---|---|---|
-| `inventory/` | Inventory management (products + orders) | 10 | 10 | Active |
 
 ## Supported Models
 
