@@ -2,33 +2,29 @@
 """
 Evaluation Runner — run an LLM agent against any gym's scenarios.
 
-This is the main entry point for evaluating LLM models. It:
+This is the main CLI entry point for evaluating LLM models. It:
   1. Connects an LLM (local or online) to an OpenEnv gym
   2. Runs each scenario: LLM reasons → OpenEnv executes → reward scored
   3. Prints per-scenario and aggregate results
-  4. Optionally saves results to a markdown file
+  4. Optionally saves results to results/<gym>/<run_id>.md (--save)
+  5. Optionally saves detailed trajectory JSON to trajectories/<gym>/<run_id>/<model>.json (--trajectory)
+
+Each evaluation run is grouped under a run ID (auto-generated timestamp or provided via --run-id).
+This allows multiple runs to coexist for comparison:
+    results/inventory/run_20260311_1830.md    — results for that run
+    trajectories/inventory/run_20260311_1830/ — per-model trajectory JSONs
 
 The LLM never calls tools directly — everything goes through OpenEnv.
 
 Usage:
-    # Evaluate with OpenAI GPT-4o on the inventory gym
     python run_eval.py --gym inventory --model gpt-4o
-
-    # Evaluate with Anthropic Claude
-    python run_eval.py --gym inventory --model claude-sonnet-4-20250514
-
-    # Evaluate with local Ollama model
-    python run_eval.py --gym inventory --model ollama/llama3
-
-    # Run a specific scenario only
-    python run_eval.py --gym inventory --model gpt-4o --scenario create_product
-
-    # Save results to markdown
-    python run_eval.py --gym inventory --model gpt-4o --save
+    python run_eval.py --gym inventory --model gpt-4o --save --trajectory
+    python run_eval.py --gym inventory --model gpt-4o --save --trajectory --run-id run_20260311_1830
+    python run_eval.py --gym inventory --model gpt-5.4 --temperature 1.0 --save --trajectory
 
 Before running:
-    Terminal 1: cd inventory && python main.py          (API on port 8000)
-    Terminal 2: cd inventory && python server/app.py    (OpenEnv on port 9000)
+    Terminal 1: cd inventory && python main.py
+    Terminal 2: cd inventory && python -m uvicorn server.app:app --host 0.0.0.0 --port 9000
 """
 
 import argparse
@@ -37,7 +33,8 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from dotenv import load_dotenv
@@ -106,12 +103,14 @@ def save_results_to_markdown(
     output_path: str,
     total_elapsed: float,
     temperature: float,
+    run_id: str = "",
 ):
     """
-    Append (or create) a markdown results file for this gym.
+    Append (or create) a markdown results file for this evaluation run.
 
+    Results are stored at: results/<gym>/<run_id>.md
     If the file already exists, appends a new section for this model run.
-    This allows running multiple models and accumulating results in one file.
+    This allows running multiple models within the same run and accumulating results.
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
@@ -121,6 +120,7 @@ def save_results_to_markdown(
     with open(output_path, "a") as f:
         if is_new_file:
             f.write(f"# {gym.title()} Gym — Evaluation Results\n\n")
+            f.write(f"**Run ID**: `{run_id}`\n\n")
             f.write(f"Evaluation results for the **{gym}** gym across different LLM models.\n\n")
             f.write(f"Each model is evaluated on the same set of scenarios. ")
             f.write(f"Rewards are computed by `rewards/base.py` using:\n")
@@ -128,12 +128,15 @@ def save_results_to_markdown(
             f.write(f"- **Ground Truth** (0.60) — database state matches expected outcome\n")
             f.write(f"- **Efficiency** (0.15) — solved in reasonable steps\n")
             f.write(f"- **Hallucination Penalty** (-1.0) — tools say success but DB disagrees\n\n")
+            f.write(f"Trajectories: `trajectories/{gym}/{run_id}/`\n\n")
             f.write(f"---\n\n")
 
+        safe_model = model.replace("/", "_").replace(":", "_")
         f.write(f"## Model: `{model}`\n\n")
         f.write(f"- **Date**: {timestamp}\n")
         f.write(f"- **Temperature**: {temperature}\n")
-        f.write(f"- **Total Time**: {total_elapsed:.1f}s\n\n")
+        f.write(f"- **Total Time**: {total_elapsed:.1f}s\n")
+        f.write(f"- **Trajectory**: `trajectories/{gym}/{run_id}/{safe_model}.json`\n\n")
 
         # Results table
         f.write(f"| Scenario | Structural | Ground Truth | Efficiency | Penalty | **Total** | Steps | Time |\n")
@@ -170,6 +173,123 @@ def save_results_to_markdown(
     logger.info(f"Results saved to {output_path}")
 
 
+def save_trajectory(
+    results: List[Dict[str, Any]],
+    scenarios: list,
+    model: str,
+    gym: str,
+    temperature: float,
+    total_elapsed: float,
+    run_id: str = "",
+):
+    """
+    Save a detailed trajectory JSON for this model run.
+
+    Structure:
+        trajectories/<gym>/<run_id>/<model_name>.json
+
+    The JSON contains:
+      - run metadata (run_id, model, gym, timestamp, temperature)
+      - per-scenario trajectories with step-by-step tool calls,
+        arguments, results, timestamps, and reward breakdown.
+    """
+    run_ts = datetime.now(timezone.utc).isoformat()
+
+    # Sanitize model name for filename (e.g. "ollama/llama3" → "ollama_llama3")
+    safe_model = model.replace("/", "_").replace(":", "_")
+    filename = f"{safe_model}.json"
+
+    traj_dir = os.path.join(os.path.dirname(__file__), "trajectories", gym, run_id)
+    os.makedirs(traj_dir, exist_ok=True)
+    filepath = os.path.join(traj_dir, filename)
+
+    trajectory = {
+        "run_id": run_id or "untagged",
+        "model": model,
+        "gym": gym,
+        "timestamp": run_ts,
+        "temperature": temperature,
+        "total_elapsed_s": round(total_elapsed, 2),
+        "total_scenarios": len(results),
+        "scenarios": [],
+    }
+
+    for r, scenario in zip(results, scenarios):
+        scenario_entry = {
+            "scenario_id": scenario.id,
+            "prompt": scenario.prompt,
+            "expected_tools": scenario.expected_tools,
+            "max_steps": scenario.max_steps,
+            "elapsed_s": round(r["elapsed"], 2),
+        }
+
+        # Steps (trajectory detail)
+        episode = r.get("episode")
+        if episode:
+            steps = []
+            for i, step in enumerate(episode.steps, 1):
+                # Parse result — it's stored as a string now
+                result_data = step.result
+                if isinstance(result_data, str):
+                    try:
+                        result_data = json.loads(result_data)
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+
+                steps.append({
+                    "step": i,
+                    "timestamp": step.timestamp,
+                    "tool_name": step.tool_name,
+                    "arguments": step.arguments,
+                    "success": step.success,
+                    "result": result_data,
+                    "error": step.error,
+                    "elapsed_s": round(step.elapsed, 3),
+                })
+            scenario_entry["steps"] = steps
+            scenario_entry["total_steps"] = len(steps)
+        else:
+            scenario_entry["steps"] = []
+            scenario_entry["total_steps"] = 0
+            scenario_entry["error"] = r.get("error", "Unknown error")
+
+        # Outcome checks
+        outcome_results = r.get("outcome_results", [])
+        checks = []
+        for check_def, passed in zip(scenario.outcome_checks, outcome_results):
+            checks.append({
+                "check": check_def,
+                "passed": passed,
+            })
+        scenario_entry["outcome_checks"] = checks
+
+        # Reward breakdown
+        bd = r.get("breakdown")
+        if bd:
+            scenario_entry["reward"] = {
+                "structural": round(bd.structural, 4),
+                "ground_truth": round(bd.ground_truth, 4),
+                "efficiency": round(bd.efficiency, 4),
+                "penalty": round(bd.penalty, 4),
+                "total": round(bd.total, 4),
+            }
+        else:
+            scenario_entry["reward"] = None
+
+        trajectory["scenarios"].append(scenario_entry)
+
+    # Compute run-level summary
+    totals = [s["reward"]["total"] for s in trajectory["scenarios"] if s.get("reward")]
+    trajectory["avg_reward"] = round(sum(totals) / len(totals), 4) if totals else 0.0
+
+    with open(filepath, "w") as f:
+        json.dump(trajectory, f, indent=2, default=str)
+
+    print(f"\n  Trajectory saved: {filepath}")
+    logger.info(f"Trajectory saved to {filepath}")
+    return filepath
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Evaluate an LLM agent against OpenEnv gym scenarios.",
@@ -177,10 +297,13 @@ def main():
         epilog="""
 Examples:
   python run_eval.py --gym inventory --model gpt-4o
-  python run_eval.py --gym inventory --model claude-sonnet-4-20250514
+  python run_eval.py --gym inventory --model claude-sonnet-4-6
   python run_eval.py --gym inventory --model ollama/llama3
   python run_eval.py --gym inventory --model gpt-4o --scenario create_product
   python run_eval.py --gym inventory --model gpt-4o --save
+  python run_eval.py --gym inventory --model gpt-4o --trajectory
+  python run_eval.py --gym inventory --model gpt-4o --save --trajectory
+  python run_eval.py --gym inventory --model gpt-5.4 --temperature 1.0 --save --trajectory
         """,
     )
     parser.add_argument(
@@ -227,12 +350,29 @@ Examples:
         help="Save results to results/<gym>.md",
     )
     parser.add_argument(
+        "--trajectory",
+        action="store_true",
+        help="Save detailed trajectory JSON to trajectories/<gym>/<run_id>/",
+    )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="Run identifier for grouping results and trajectories "
+             "(default: auto-generated as run_YYYYMMDD_HHMM)",
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable debug logging",
     )
 
     args = parser.parse_args()
+
+    # Generate or use provided run_id
+    if args.run_id:
+        run_id = args.run_id
+    else:
+        run_id = f"run_{datetime.now().strftime('%Y%m%d_%H%M')}"
 
     # Setup logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
@@ -262,6 +402,7 @@ Examples:
     divider("LLM Evaluation Run")
     print(f"  Gym:          {args.gym}")
     print(f"  Model:        {args.model}")
+    print(f"  Run ID:       {run_id}")
     print(f"  OpenEnv URL:  {openenv_url}")
     print(f"  API URL:      {api_url}")
     print(f"  Scenarios:    {len(scenarios)} of {len(all_scenarios)}")
@@ -322,6 +463,8 @@ Examples:
                     "breakdown": breakdown,
                     "steps": len(episode.steps),
                     "elapsed": elapsed,
+                    "episode": episode,
+                    "outcome_results": outcome_results,
                 })
 
             except Exception as e:
@@ -367,7 +510,7 @@ Examples:
     # Save results to markdown if requested
     if args.save:
         output_path = os.path.join(
-            os.path.dirname(__file__), "results", f"{args.gym}.md"
+            os.path.dirname(__file__), "results", args.gym, f"{run_id}.md"
         )
         save_results_to_markdown(
             results=results,
@@ -376,6 +519,20 @@ Examples:
             output_path=output_path,
             total_elapsed=total_elapsed,
             temperature=args.temperature,
+            run_id=run_id,
+        )
+        print(f"\n  Results saved: {output_path}")
+
+    # Save trajectory JSON if requested
+    if args.trajectory:
+        save_trajectory(
+            results=results,
+            scenarios=scenarios,
+            model=args.model,
+            gym=args.gym,
+            temperature=args.temperature,
+            total_elapsed=total_elapsed,
+            run_id=run_id,
         )
 
 

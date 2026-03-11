@@ -8,7 +8,13 @@ Computes a 3-component episode-level reward:
 
 Plus a hallucination penalty (-1.0) when tools "succeed" but DB shows nothing.
 
+This module is gym-agnostic. Each gym provides its own checker
+(e.g. rewards/inventory_checks.py) and scenarios (e.g. scenarios/inventory.py).
+The reward calculator only needs an EpisodeLog, a Scenario, and outcome_results.
+
 Usage:
+    from rewards.base import RewardCalculator
+
     calculator = RewardCalculator()
     breakdown = calculator.calculate(episode_log, scenario, outcome_results)
 """
@@ -29,6 +35,8 @@ class StepLog:
     success: bool
     result: Any = None
     error: Optional[str] = None
+    timestamp: Optional[str] = None  # ISO-format when the call started
+    elapsed: float = 0.0             # seconds this step took
 
 
 @dataclass
@@ -44,6 +52,8 @@ class EpisodeLog:
         success: bool,
         result: Any = None,
         error: Optional[str] = None,
+        timestamp: Optional[str] = None,
+        elapsed: float = 0.0,
     ) -> None:
         self.steps.append(
             StepLog(
@@ -52,6 +62,8 @@ class EpisodeLog:
                 success=success,
                 result=result,
                 error=error,
+                timestamp=timestamp,
+                elapsed=elapsed,
             )
         )
 

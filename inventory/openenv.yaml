@@ -1,7 +1,5 @@
 # OpenEnv Environment Manifest
-# This is the REAL format used by the OpenEnv ecosystem.
-# Compare with echo_env's: spec_version, name, type, runtime, app, port
-# It tells OpenEnv HOW to find and run your environment.
+# Tells OpenEnv how to find and run this environment.
 
 spec_version: 1
 name: inventory_env

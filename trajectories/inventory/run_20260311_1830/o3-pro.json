@@ -1,0 +1,1048 @@
+{
+  "run_id": "d81a4558",
+  "model": "o3-pro",
+  "gym": "inventory",
+  "timestamp": "2026-03-11T21:02:45.935700+05:30",
+  "temperature": 1.0,
+  "total_elapsed_s": 647.13,
+  "total_scenarios": 10,
+  "scenarios": [
+    {
+      "scenario_id": "create_product",
+      "prompt": "Create a product called 'Wireless Mouse' with SKU 'SC1-WM-001', price $29.99, description 'Ergonomic wireless mouse', and 50 units in stock.",
+      "expected_tools": [
+        "create_product"
+      ],
+      "max_steps": 3,
+      "elapsed_s": 36.24,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-11T21:02:45.935700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Mouse",
+            "sku": "SC1-WM-001",
+            "price": 29.99,
+            "description": "Ergonomic wireless mouse",
+            "stock_quantity": 50
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 1, \"name\": \"Wireless Mouse\", \"sku\": \"SC1-WM-001\", \"description\": \"Ergonomic wireless mouse\", \"price\": 29.99, \"stock_quantity\": 50, \"is_active\": true, \"created_at\": \"2026-03-11T21:02:46.764700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.029
+        }
+      ],
+      "total_steps": 1,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC1-WM-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC1-WM-001",
+            "field": "name",
+            "value": "Wireless Mouse"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC1-WM-001",
+            "field": "price",
+            "value": 29.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC1-WM-001",
+            "field": "stock_quantity",
+            "value": 50
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 1.0,
+        "penalty": 0.0,
+        "total": 1.0
+      }
+    },
+    {
+      "scenario_id": "create_and_verify_product",
+      "prompt": "Create a product called 'Mechanical Keyboard' with SKU 'SC2-KB-001', price $89.99, 200 units in stock. Then retrieve the product to verify it was created correctly.",
+      "expected_tools": [
+        "create_product",
+        "get_product"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 39.67,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-11T21:02:48.264700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Mechanical Keyboard",
+            "sku": "SC2-KB-001",
+            "price": 89.99,
+            "stock_quantity": 200
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 2, \"name\": \"Mechanical Keyboard\", \"sku\": \"SC2-KB-001\", \"description\": \"\", \"price\": 89.99, \"stock_quantity\": 200, \"is_active\": true, \"created_at\": \"2026-03-11T21:02:49.080700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-11T21:02:49.080700+05:30",
+          "tool_name": "get_product",
+          "arguments": {
+            "product_id": 2
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 2, \"name\": \"Mechanical Keyboard\", \"sku\": \"SC2-KB-001\", \"description\": \"\", \"price\": 89.99, \"stock_quantity\": 200, \"is_active\": true, \"created_at\": \"2026-03-11T21:02:49.898700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.018
+        }
+      ],
+      "total_steps": 2,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC2-KB-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC2-KB-001",
+            "field": "name",
+            "value": "Mechanical Keyboard"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC2-KB-001",
+            "field": "price",
+            "value": 89.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC2-KB-001",
+            "field": "stock_quantity",
+            "value": 200
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 1.0,
+        "penalty": 0.0,
+        "total": 1.0
+      }
+    },
+    {
+      "scenario_id": "product_and_order",
+      "prompt": "Create a product called 'USB Hub' with SKU 'SC3-UH-001', price $19.99, 100 units in stock. Then create an order for customer 'Jane Smith' (jane.sc3@test.com) buying 3 units of that product.",
+      "expected_tools": [
+        "create_product",
+        "create_order"
+      ],
+      "max_steps": 6,
+      "elapsed_s": 129.22,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-11T21:02:51.398700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "USB Hub",
+            "sku": "SC3-UH-001",
+            "price": 19.99,
+            "stock_quantity": 100
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 3, \"name\": \"USB Hub\", \"sku\": \"SC3-UH-001\", \"description\": \"\", \"price\": 19.99, \"stock_quantity\": 100, \"is_active\": true, \"created_at\": \"2026-03-11T21:02:52.216700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-11T21:02:52.216700+05:30",
+          "tool_name": "create_order",
+          "arguments": {
+            "customer_name": "Jane Smith",
+            "customer_email": "jane.sc3@test.com",
+            "items": [
+              {
+                "product_id": 3,
+                "quantity": 3
+              }
+            ]
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 1, \"customer_name\": \"Jane Smith\", \"customer_email\": \"jane.sc3@test.com\", \"status\": \"pending\", \"total_amount\": 57.0, \"created_at\": \"2026-03-11T21:02:53.039700\", \"items\": [{\"id\": 1, \"product_id\": 3, \"quantity\": 19, \"unit_price\": 3.0}]}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.023
+        }
+      ],
+      "total_steps": 2,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC3-UH-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC3-UH-001",
+            "field": "price",
+            "value": 19.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "jane.sc3@test.com"
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 0.6667,
+        "efficiency": 1.0,
+        "penalty": 0.0,
+        "total": 0.8
+      }
+    },
+    {
+      "scenario_id": "update_product_price",
+      "prompt": "Create a product called 'Bluetooth Speaker' with SKU 'SC4-BS-001', price $49.99, and 30 units in stock. Then update the product's price to $39.99.",
+      "expected_tools": [
+        "create_product",
+        "update_product"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 47.49,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-11T21:02:54.539700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Bluetooth Speaker",
+            "sku": "SC4-BS-001",
+            "price": 49.99,
+            "stock_quantity": 30
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 4, \"name\": \"Bluetooth Speaker\", \"sku\": \"SC4-BS-001\", \"description\": \"\", \"price\": 49.99, \"stock_quantity\": 30, \"is_active\": true, \"created_at\": \"2026-03-11T21:02:55.353700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-11T21:02:55.353700+05:30",
+          "tool_name": "update_product",
+          "arguments": {
+            "product_id": 4,
+            "price": 39.99
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 4, \"name\": \"Bluetooth Speaker\", \"sku\": \"SC4-BS-001\", \"description\": \"\", \"price\": 39.99, \"stock_quantity\": 30, \"is_active\": true, \"created_at\": \"2026-03-11T21:02:56.171700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.018
+        }
+      ],
+      "total_steps": 2,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC4-BS-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC4-BS-001",
+            "field": "name",
+            "value": "Bluetooth Speaker"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC4-BS-001",
+            "field": "price",
+            "value": 39.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC4-BS-001",
+            "field": "stock_quantity",
+            "value": 30
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 1.0,
+        "penalty": 0.0,
+        "total": 1.0
+      }
+    },
+    {
+      "scenario_id": "search_product",
+      "prompt": "Create a product called 'Gaming Headset Pro' with SKU 'SC5-GH-001', price $79.99, description 'Surround sound gaming headset', and 60 units in stock. Then search for products matching 'Gaming Headset' and confirm the product appears in the results.",
+      "expected_tools": [
+        "create_product",
+        "search_products"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 52.38,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-11T21:02:57.671700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Gaming Headset Pro",
+            "sku": "SC5-GH-001",
+            "price": 79.99,
+            "description": "Surround sound gaming headset",
+            "stock_quantity": 60
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 5, \"name\": \"Gaming Headset Pro\", \"sku\": \"SC5-GH-001\", \"description\": \"Surround sound gaming headset\", \"price\": 79.99, \"stock_quantity\": 60, \"is_active\": true, \"created_at\": \"2026-03-11T21:02:58.485700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-11T21:02:58.485700+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Gaming Headset"
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "[{\"id\": 5, \"name\": \"Gaming Headset Pro\", \"sku\": \"SC5-GH-001\", \"description\": \"Surround sound gaming headset\", \"price\": 79.99, \"stock_quantity\": 60, \"is_active\": true, \"created_at\": \"2026-03-11T21:02:59.299700\"}]",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.014
+        }
+      ],
+      "total_steps": 2,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC5-GH-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC5-GH-001",
+            "field": "name",
+            "value": "Gaming Headset Pro"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC5-GH-001",
+            "field": "price",
+            "value": 79.99
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 1.0,
+        "penalty": 0.0,
+        "total": 1.0
+      }
+    },
+    {
+      "scenario_id": "deactivate_product",
+      "prompt": "Create a product called 'Old Webcam' with SKU 'SC6-OW-001', price $15.00, and 5 units in stock. Then deactivate the product (set is_active to false) because it is discontinued.",
+      "expected_tools": [
+        "create_product",
+        "update_product"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 47.53,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-11T21:03:00.799700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Old Webcam",
+            "sku": "SC6-OW-001",
+            "price": 15.0,
+            "stock_quantity": 5,
+            "description": "Discontinued model"
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 6, \"name\": \"Old Webcam\", \"sku\": \"SC6-OW-001\", \"description\": \"Discontinued model\", \"price\": 15.0, \"stock_quantity\": 5, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:01.615700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-11T21:03:01.615700+05:30",
+          "tool_name": "update_product",
+          "arguments": {
+            "product_id": 6,
+            "is_active": false
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 6, \"name\": \"Old Webcam\", \"sku\": \"SC6-OW-001\", \"description\": \"Discontinued model\", \"price\": 15.0, \"stock_quantity\": 5, \"is_active\": false, \"created_at\": \"2026-03-11T21:03:02.429700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.014
+        }
+      ],
+      "total_steps": 2,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC6-OW-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC6-OW-001",
+            "field": "is_active",
+            "value": false
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 1.0,
+        "penalty": 0.0,
+        "total": 1.0
+      }
+    },
+    {
+      "scenario_id": "bulk_product_creation",
+      "prompt": "Create two products:\n  1. 'Monitor Stand' with SKU 'SC7-MS-001', price $34.99, 40 units in stock.\n  2. 'Desk Lamp' with SKU 'SC7-DL-001', price $24.99, 75 units in stock.\nThen list all products to confirm both were added.",
+      "expected_tools": [
+        "create_product",
+        "list_products"
+      ],
+      "max_steps": 6,
+      "elapsed_s": 64.01,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-11T21:03:03.929700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Monitor Stand",
+            "sku": "SC7-MS-001",
+            "price": 34.99,
+            "stock_quantity": 40
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 7, \"name\": \"Monitor Stand\", \"sku\": \"SC7-MS-001\", \"description\": \"\", \"price\": 34.99, \"stock_quantity\": 40, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:04.743700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-11T21:03:04.743700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Desk Lamp",
+            "sku": "SC7-DL-001",
+            "price": 24.99,
+            "stock_quantity": 75
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 8, \"name\": \"Desk Lamp\", \"sku\": \"SC7-DL-001\", \"description\": \"\", \"price\": 24.99, \"stock_quantity\": 75, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:05.561700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-11T21:03:05.561700+05:30",
+          "tool_name": "list_products",
+          "arguments": {
+            "active_only": true
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "[{\"id\": 8, \"name\": \"Desk Lamp\", \"sku\": \"SC7-DL-001\", \"description\": \"\", \"price\": 24.99, \"stock_quantity\": 75, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:06.378700\"}, {\"id\": 7, \"name\": \"Monitor Stand\", \"sku\": \"SC7-MS-001\", \"description\": \"\", \"price\": 34.99, \"stock_quantity\": 40, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:06.378700\"}, {\"id\": 5, \"name\": \"Gaming Headset Pro\", \"sku\": \"SC5-GH-001\", \"description\": \"Surround sound gaming headset\", \"price\": 79.99, \"stock_quantity\": 60, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:06.378700\"}, {\"id\": 4, \"name\": \"Bluetooth Speaker\", \"sku\": \"SC4-BS-001\", \"description\": \"\", \"price\": 39.99, \"stock_quantity\": 30, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:06.378700\"}, {\"id\": 3, \"name\": \"USB Hub\", \"sku\": \"SC3-UH-001\", \"description\": \"\", \"price\": 19.99, \"stock_quantity\": 97, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:06.378700\"}, {\"id\": 2, \"name\": \"Mechanical Keyboard\", \"sku\": \"SC2-KB-001\", \"description\": \"\", \"price\": 89.99, \"stock_quantity\": 200, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:06.378700\"}, {\"id\": 1, \"name\": \"Wireless Mouse\", \"sku\": \"SC1-WM-001\", \"description\": \"Ergonomic wireless mouse\", \"price\": 29.99, \"stock_quantity\": 50, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:06.378700\"}]",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.017
+        }
+      ],
+      "total_steps": 3,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC7-MS-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC7-MS-001",
+            "field": "price",
+            "value": 34.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC7-DL-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC7-DL-001",
+            "field": "price",
+            "value": 24.99
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 0.6667,
+        "penalty": 0.0,
+        "total": 0.95
+      }
+    },
+    {
+      "scenario_id": "full_order_workflow",
+      "prompt": "Create a product called 'Ergonomic Chair' with SKU 'SC8-EC-001', price $299.99, and 20 units in stock. Then create an order for customer 'Bob Wilson' (bob.sc8@test.com) buying 2 units of the chair. Finally, retrieve the order details to verify it was created correctly.",
+      "expected_tools": [
+        "create_product",
+        "create_order",
+        "get_order_detail"
+      ],
+      "max_steps": 8,
+      "elapsed_s": 71.65,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-11T21:03:07.878700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Ergonomic Chair",
+            "sku": "SC8-EC-001",
+            "price": 299.99,
+            "stock_quantity": 20,
+            "description": "High-back ergonomic office chair with lumbar support"
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 9, \"name\": \"Ergonomic Chair\", \"sku\": \"SC8-EC-001\", \"description\": \"High-back ergonomic office chair with lumbar support\", \"price\": 299.99, \"stock_quantity\": 20, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:08.694700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-11T21:03:08.694700+05:30",
+          "tool_name": "create_order",
+          "arguments": {
+            "customer_name": "Bob Wilson",
+            "customer_email": "bob.sc8@test.com",
+            "items": [
+              {
+                "product_id": 9,
+                "quantity": 2
+              }
+            ]
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 2, \"customer_name\": \"Bob Wilson\", \"customer_email\": \"bob.sc8@test.com\", \"status\": \"pending\", \"total_amount\": 598.0, \"created_at\": \"2026-03-11T21:03:09.514700\", \"items\": [{\"id\": 2, \"product_id\": 9, \"quantity\": 299, \"unit_price\": 2.0}]}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.02
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-11T21:03:09.514700+05:30",
+          "tool_name": "get_order_detail",
+          "arguments": {
+            "order_id": 2
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 2, \"customer_name\": \"Bob Wilson\", \"customer_email\": \"bob.sc8@test.com\", \"status\": \"pending\", \"total_amount\": 598.0, \"items\": []}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.089
+        }
+      ],
+      "total_steps": 3,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC8-EC-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC8-EC-001",
+            "field": "price",
+            "value": 299.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "bob.sc8@test.com"
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_has_items",
+            "customer_email": "bob.sc8@test.com",
+            "expected_count": 1
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 0.5,
+        "efficiency": 1.0,
+        "penalty": 0.0,
+        "total": 0.7
+      }
+    },
+    {
+      "scenario_id": "multi_item_order",
+      "prompt": "Create two products:\n  1. 'Notebook' with SKU 'SC9-NB-001', price $12.99, 500 units in stock.\n  2. 'Pen Set' with SKU 'SC9-PS-001', price $8.49, 300 units in stock.\nThen create a single order for customer 'Alice Brown' (alice.sc9@test.com) that contains both products: 10 notebooks and 5 pen sets.",
+      "expected_tools": [
+        "create_product",
+        "create_order"
+      ],
+      "max_steps": 8,
+      "elapsed_s": 68.53,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-11T21:03:11.903700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Notebook",
+            "sku": "SC9-NB-001",
+            "price": 12.99,
+            "description": "Standard ruled notebook",
+            "stock_quantity": 500
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 10, \"name\": \"Notebook\", \"sku\": \"SC9-NB-001\", \"description\": \"Standard ruled notebook\", \"price\": 12.99, \"stock_quantity\": 500, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:12.717700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-11T21:03:12.717700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Pen Set",
+            "sku": "SC9-PS-001",
+            "price": 8.49,
+            "description": "Set of 5 assorted color pens",
+            "stock_quantity": 300
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 11, \"name\": \"Pen Set\", \"sku\": \"SC9-PS-001\", \"description\": \"Set of 5 assorted color pens\", \"price\": 8.49, \"stock_quantity\": 300, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:13.534700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-11T21:03:13.534700+05:30",
+          "tool_name": "create_order",
+          "arguments": {
+            "customer_name": "Alice Brown",
+            "customer_email": "alice.sc9@test.com",
+            "items": [
+              {
+                "product_id": 10,
+                "quantity": 10
+              },
+              {
+                "product_id": 11,
+                "quantity": 5
+              }
+            ]
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 3, \"customer_name\": \"Alice Brown\", \"customer_email\": \"alice.sc9@test.com\", \"status\": \"pending\", \"total_amount\": 160.0, \"created_at\": \"2026-03-11T21:03:14.359700\", \"items\": [{\"id\": 3, \"product_id\": 10, \"quantity\": 12, \"unit_price\": 10.0}, {\"id\": 4, \"product_id\": 11, \"quantity\": 8, \"unit_price\": 5.0}]}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.025
+        }
+      ],
+      "total_steps": 3,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC9-NB-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC9-PS-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "alice.sc9@test.com"
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_has_items",
+            "customer_email": "alice.sc9@test.com",
+            "expected_count": 2
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 0.5,
+        "efficiency": 0.6667,
+        "penalty": 0.0,
+        "total": 0.65
+      }
+    },
+    {
+      "scenario_id": "price_change_then_order",
+      "prompt": "Create a product called 'Wireless Charger' with SKU 'SC10-WC-001', price $45.00, and 150 units in stock. The price is wrong \u2014 update it to $35.00. Then create an order for customer 'Charlie Davis' (charlie.sc10@test.com) buying 5 units of the charger at the corrected price. Finally, retrieve the order summary to confirm the order.",
+      "expected_tools": [
+        "create_product",
+        "update_product",
+        "create_order",
+        "get_order_summary"
+      ],
+      "max_steps": 10,
+      "elapsed_s": 90.27,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-11T21:03:15.859700+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Charger",
+            "sku": "SC10-WC-001",
+            "price": 45,
+            "stock_quantity": 150
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 12, \"name\": \"Wireless Charger\", \"sku\": \"SC10-WC-001\", \"description\": \"\", \"price\": 45.0, \"stock_quantity\": 150, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:16.675700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-11T21:03:16.675700+05:30",
+          "tool_name": "update_product",
+          "arguments": {
+            "product_id": 12,
+            "price": 35
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 12, \"name\": \"Wireless Charger\", \"sku\": \"SC10-WC-001\", \"description\": \"\", \"price\": 35.0, \"stock_quantity\": 150, \"is_active\": true, \"created_at\": \"2026-03-11T21:03:17.489700\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-11T21:03:17.489700+05:30",
+          "tool_name": "create_order",
+          "arguments": {
+            "customer_name": "Charlie Davis",
+            "customer_email": "charlie.sc10@test.com",
+            "items": [
+              {
+                "product_id": 12,
+                "quantity": 5
+              }
+            ]
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"id\": 4, \"customer_name\": \"Charlie Davis\", \"customer_email\": \"charlie.sc10@test.com\", \"status\": \"pending\", \"total_amount\": 175.0, \"created_at\": \"2026-03-11T21:03:18.304700\", \"items\": [{\"id\": 5, \"product_id\": 12, \"quantity\": 35, \"unit_price\": 5.0}]}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-11T21:03:18.304700+05:30",
+          "tool_name": "get_order_summary",
+          "arguments": {
+            "order_id": 4
+          },
+          "success": true,
+          "result": [
+            {
+              "type": "text",
+              "text": "{\"order_id\": 4, \"customer_name\": \"Charlie Davis\", \"total\": 169.92, \"item_count\": 1, \"status\": \"pending\"}",
+              "annotations": null,
+              "meta": null
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.013
+        }
+      ],
+      "total_steps": 4,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC10-WC-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC10-WC-001",
+            "field": "price",
+            "value": 35.0
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "charlie.sc10@test.com"
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 0.6667,
+        "efficiency": 1.0,
+        "penalty": 0.0,
+        "total": 0.8
+      }
+    }
+  ],
+  "avg_reward": 0.89
+}

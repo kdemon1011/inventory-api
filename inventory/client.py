@@ -1,8 +1,11 @@
 """
 Inventory Environment Client — extends OpenEnv's MCPToolClient.
 
+Used by manual tests (tests/test_inventory_openenv.py) to connect
+to the Inventory OpenEnv server.
+
 Usage:
-    >>> from client import InventoryEnv
+    >>> from inventory.client import InventoryEnv
     >>>
     >>> with InventoryEnv(base_url="http://localhost:9000") as env:
     ...     env.reset()

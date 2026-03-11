@@ -1,12 +1,16 @@
 """
-End-to-End Test for the Inventory OpenEnv Environment + Reward System.
+End-to-End Manual Test for the Inventory OpenEnv Environment + Reward System.
 
-Runs scenarios against the real OpenEnv server, logs each step,
-verifies outcomes against the database, and prints the reward breakdown.
+Runs 3 hard-coded scenarios against the real OpenEnv server (no LLM),
+logs each step, verifies outcomes against the database, and prints
+the reward breakdown.
+
+This is for debugging the environment + reward system — not for LLM evaluation.
+For LLM evaluation, use run_eval.py instead.
 
 Before running:
-  Terminal 1: cd inventory && python main.py          (Inventory API on port 8000)
-  Terminal 2: cd inventory && python server/app.py    (OpenEnv server on port 9000)
+  Terminal 1: cd inventory && python main.py
+  Terminal 2: cd inventory && python -m uvicorn server.app:app --host 0.0.0.0 --port 9000
 
 Then (from repo root):
   python tests/test_inventory_openenv.py

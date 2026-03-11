@@ -5,18 +5,18 @@ This environment wraps the existing Inventory FastAPI app using OpenEnv's
 real framework. Instead of building custom reset/step/state logic, we:
 
 1. Inherit from MCPEnvironment (OpenEnv's base class for tool-based envs)
-2. Define tools using FastMCP decorators (@mcp.tool)
+2. Define tools using FastMCP decorators (@mcp.tool())
 3. OpenEnv auto-discovers these tools and handles the Gym-style API
 
 Each tool maps to an operation on the Inventory API (running on port 8000).
-The AI agent discovers tools via list_tools(), then calls them via call_tool().
+The LLM agent discovers tools via list_tools(), then calls them via env.step().
 
 Architecture:
     ┌─────────────┐  WebSocket   ┌──────────────────────┐  HTTP    ┌──────────────┐
-    │  AI Agent /  │ ──────────► │  THIS ENVIRONMENT    │ ───────► │ Inventory API│
-    │  RL Trainer  │ ◄────────── │  (OpenEnv, port 9000)│ ◄─────── │ (port 8000)  │
+    │  LLM Agent  │ ──────────► │  THIS ENVIRONMENT    │ ───────► │ Inventory API│
+    │  (run_eval) │ ◄────────── │  (OpenEnv, port 9000)│ ◄─────── │ (port 8000)  │
     └─────────────┘              └──────────────────────┘          └──────────────┘
-        Uses MCPToolClient         Inherits MCPEnvironment           Your FastAPI
+        Uses MCPToolClient         Inherits MCPEnvironment           FastAPI + SQLite
 """
 
 import os
@@ -71,7 +71,7 @@ class InventoryEnvironment(MCPEnvironment):
         # These are auto-discovered by OpenEnv's MCPEnvironment
         # ────────────────────────────────────────────────
 
-        @mcp.tool
+        @mcp.tool()
         def create_product(
             name: str, sku: str, price: float,
             description: str = "", stock_quantity: int = 0
@@ -96,7 +96,7 @@ class InventoryEnvironment(MCPEnvironment):
             resp.raise_for_status()
             return resp.json()
 
-        @mcp.tool
+        @mcp.tool()
         def list_products(active_only: bool = True) -> list:
             """
             List all products in the inventory.
@@ -113,7 +113,7 @@ class InventoryEnvironment(MCPEnvironment):
             resp.raise_for_status()
             return resp.json()
 
-        @mcp.tool
+        @mcp.tool()
         def get_product(product_id: int) -> dict:
             """
             Get details of a specific product by its ID.
@@ -128,7 +128,7 @@ class InventoryEnvironment(MCPEnvironment):
             resp.raise_for_status()
             return resp.json()
 
-        @mcp.tool
+        @mcp.tool()
         def search_products(query: str) -> list:
             """
             Search for products by name or description.
@@ -143,7 +143,7 @@ class InventoryEnvironment(MCPEnvironment):
             resp.raise_for_status()
             return resp.json()
 
-        @mcp.tool
+        @mcp.tool()
         def update_product(
             product_id: int,
             name: str = None,
@@ -184,7 +184,7 @@ class InventoryEnvironment(MCPEnvironment):
             resp.raise_for_status()
             return resp.json()
 
-        @mcp.tool
+        @mcp.tool()
         def create_order(
             customer_name: str,
             customer_email: str,
@@ -210,7 +210,7 @@ class InventoryEnvironment(MCPEnvironment):
             resp.raise_for_status()
             return resp.json()
 
-        @mcp.tool
+        @mcp.tool()
         def list_orders(
             status: str = None,
         ) -> list:
@@ -230,7 +230,7 @@ class InventoryEnvironment(MCPEnvironment):
             resp.raise_for_status()
             return resp.json()
 
-        @mcp.tool
+        @mcp.tool()
         def get_order(order_id: int) -> dict:
             """
             Get details of a specific order by its ID.
@@ -245,7 +245,7 @@ class InventoryEnvironment(MCPEnvironment):
             resp.raise_for_status()
             return resp.json()
 
-        @mcp.tool
+        @mcp.tool()
         def get_order_detail(order_id: int) -> dict:
             """
             Get full detail of an order including item breakdown.
@@ -260,7 +260,7 @@ class InventoryEnvironment(MCPEnvironment):
             resp.raise_for_status()
             return resp.json()
 
-        @mcp.tool
+        @mcp.tool()
         def get_order_summary(order_id: int) -> dict:
             """
             Get a summary of an order (customer, total, item count, status).
@@ -276,7 +276,7 @@ class InventoryEnvironment(MCPEnvironment):
             return resp.json()
 
         # ── Pass MCP server to the base class ──
-        # This is the KEY line — MCPEnvironment auto-discovers all @mcp.tool
+        # This is the KEY line — MCPEnvironment auto-discovers all @mcp.tool()
         # functions and makes them available via list_tools() / call_tool()
         super().__init__(mcp)
 
@@ -289,8 +289,8 @@ class InventoryEnvironment(MCPEnvironment):
         """
         Reset the environment for a new episode.
 
-        This is called at the start of each training episode.
-        It resets the step counter, reward, and action history.
+        Called at the start of each evaluation episode.
+        Resets the step counter and episode state.
 
         Returns:
             Observation with done=False, indicating the episode has started.

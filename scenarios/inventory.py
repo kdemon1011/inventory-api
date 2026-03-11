@@ -1,13 +1,17 @@
 """
 Scenario definitions for the Inventory gym.
 
-Each scenario describes a task that an agent must complete.
-The reward calculator uses these to evaluate agent performance.
+Each scenario describes a task that an LLM agent must complete via OpenEnv.
+The reward calculator (rewards/base.py) uses these to evaluate agent performance.
+Ground truth checks (rewards/inventory_checks.py) verify the DB state after each scenario.
 
-Scenarios use unique SKUs (prefixed with scenario ID) to avoid
-conflicts when run sequentially in the same database.
+Scenarios use unique SKUs (prefixed with scenario ID, e.g. SC1-, SC2-) to avoid
+conflicts when run sequentially in the same database session.
+
+Currently: 10 scenarios ranging from single-tool to complex multi-step workflows.
 
 To add a new scenario: append a Scenario to INVENTORY_SCENARIOS.
+To add scenarios for a new gym: create scenarios/<gym>.py and register in run_eval.py.
 """
 
 from rewards.base import Scenario

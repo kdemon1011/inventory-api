@@ -2,12 +2,12 @@
 LLM abstraction layer using LiteLLM.
 
 Supports any model LiteLLM supports — switch with a single string:
-  - OpenAI:     "gpt-4o", "gpt-4-turbo"
-  - Anthropic:  "claude-sonnet-4-20250514", "claude-haiku-4-20250414"
+  - OpenAI:     "gpt-4o", "gpt-5.4", "o3-pro"
+  - Anthropic:  "claude-opus-4-6", "claude-sonnet-4-6"
   - Local:      "ollama/llama3", "ollama/mistral"
   - And 100+ more providers
 
-API keys are read from environment variables automatically:
+API keys are read from environment variables (loaded from root .env):
   OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.
 
 Usage:

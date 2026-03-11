@@ -1,17 +1,19 @@
 """
-Inventory-specific outcome checks.
+Inventory-specific outcome checks — ground truth verification for the inventory gym.
 
-Each check verifies a condition against the real Inventory API.
+Each check verifies a condition against the real Inventory API (port 8000).
 The API reads from the database, so this IS ground truth verification.
+The reward system uses these results as the dominant scoring signal (weight 0.60).
 
 Check types:
   - product_exists      : product with given SKU exists
   - product_field       : product field matches expected value
   - order_exists        : order for given customer email exists
   - order_has_items     : order contains expected number of items
-  - stock_decreased     : product stock went down by expected amount
+  - stock_quantity      : product stock matches expected value
 
-To add a new check: define _check_{type}(self, check) -> bool
+To add a new check type for this gym: define _check_{type}(self, check) -> bool
+To add checks for a new gym: create rewards/<gym>_checks.py with the same interface.
 """
 
 import httpx

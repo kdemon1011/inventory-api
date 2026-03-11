@@ -6,10 +6,13 @@ This module is the CORE of the evaluation platform. It:
   2. Discovers tools via list_tools()
   3. Gives the LLM a scenario prompt + available tools
   4. Loops: LLM reasons → agent calls env.step() → observation → LLM reasons again
-  5. Collects an EpisodeLog for reward calculation
+  5. Collects an EpisodeLog with timestamps for reward calculation + trajectory logging
 
 The runner does NOT know about specific gyms. It only knows OpenEnv.
 The same runner works for inventory, browser, or any future gym.
+
+Each tool call is timestamped and timed so trajectory data can be exported
+for debugging and analysis (see run_eval.py --trajectory).
 
 Usage:
     runner = AgentRunner(model="gpt-4o", openenv_url="http://localhost:9000")
@@ -18,6 +21,8 @@ Usage:
 
 import json
 import logging
+import time
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from openenv.core.mcp_client import MCPToolClient
@@ -237,6 +242,8 @@ class AgentRunner:
                 logger.info(f"  Tool: {tool_name}({json.dumps(arguments, default=str)[:100]})")
 
                 # Route through OpenEnv — NOT directly to the tool
+                step_ts = datetime.now(timezone.utc).isoformat()
+                step_start = time.time()
                 error_msg = None
                 try:
                     step_result = env.step(
@@ -256,16 +263,20 @@ class AgentRunner:
                     result_str = json.dumps({"error": error_msg})
                     obs = None
 
-                # Log the step
+                step_elapsed = time.time() - step_start
+
+                # Log the step (with timestamp + elapsed for trajectory)
                 episode.add_step(
                     tool_name=tool_name,
                     arguments=arguments,
                     success=not is_error,
-                    result=obs,
+                    result=result_str,  # store the serialized result string
                     error=error_msg,
+                    timestamp=step_ts,
+                    elapsed=step_elapsed,
                 )
 
-                logger.info(f"    → success={not is_error}")
+                logger.info(f"    → success={not is_error} ({step_elapsed:.2f}s)")
 
                 # Feed result back to LLM
                 messages.append({
