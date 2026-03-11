@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openenv-inventory"
+version = "0.1.0"
+description = "Inventory Management environment for OpenEnv"
+requires-python = ">=3.10"
+dependencies = [
+    # Core OpenEnv runtime (provides FastAPI server + HTTP client types)
+    "openenv-core[core]>=0.2.0",
+    # Environment-specific dependencies
+    "fastmcp>=0.2.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "sqlalchemy>=2.0.0",
+    "aiosqlite>=0.19.0",
+    "pydantic>=2.5.0",
+    "httpx>=0.25.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+# Server entry point — enables: uv run --project . server
+server = "inventory.server.app:main"
+
+[tool.setuptools]
+include-package-data = true
+packages = ["inventory", "inventory.server"]
+package-dir = {"inventory" = ".", "inventory.server" = "server"}

@@ -8,9 +8,9 @@ the reward breakdown.
 This is for debugging the environment + reward system — not for LLM evaluation.
 For LLM evaluation, use run_eval.py instead.
 
-Before running:
-  Terminal 1: cd inventory && python main.py
-  Terminal 2: cd inventory && python -m uvicorn server.app:app --host 0.0.0.0 --port 9000
+Before running (pick one):
+  Docker: openenv build inventory/ && docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
+  Local:  cd inventory && python main.py  (Terminal 1)  &&  cd inventory && uv run server  (Terminal 2)
 
 Then (from repo root):
   python tests/test_inventory_openenv.py
