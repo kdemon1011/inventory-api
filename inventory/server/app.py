@@ -21,13 +21,13 @@ from typing import Any, Union
 
 from pydantic import TypeAdapter
 
-from openenv.core.env_server.http_server import create_app
-from openenv.core.env_server.mcp_types import (
-    CallToolAction,
-    CallToolObservation,
-    ListToolsAction,
-)
-from openenv.core.env_server.types import Action
+    from openenv.core.env_server.http_server import create_app
+    from openenv.core.env_server.mcp_types import (
+        CallToolAction,
+        CallToolObservation,
+        ListToolsAction,
+    )
+    from openenv.core.env_server.types import Action
 
 # Support running as package (from repo root) or standalone (from inventory/)
 try:

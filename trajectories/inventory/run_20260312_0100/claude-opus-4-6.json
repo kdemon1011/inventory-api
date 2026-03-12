@@ -1,0 +1,1712 @@
+{
+  "run_id": "run_20260312_0100",
+  "model": "claude-opus-4-6",
+  "gym": "inventory",
+  "timestamp": "2026-03-12T01:23:16.648418+05:30",
+  "temperature": 0.0,
+  "reward_mode": "openenv",
+  "total_elapsed_s": 202.14,
+  "total_scenarios": 10,
+  "scenarios": [
+    {
+      "scenario_id": "create_product",
+      "prompt": "Create a product called 'Wireless Mouse' with SKU 'SC1-WM-001', price $29.99, description 'Ergonomic wireless mouse', and 50 units in stock.",
+      "expected_tools": [
+        "create_product"
+      ],
+      "max_steps": 3,
+      "elapsed_s": 11.08,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T01:19:58.138361+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Mouse",
+            "sku": "SC1-WM-001",
+            "price": 29.99,
+            "description": "Ergonomic wireless mouse",
+            "stock_quantity": 50
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.064
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T01:20:01.958074+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Mouse",
+            "sku": "SC1-WM-001",
+            "price": 29.99,
+            "description": "Ergonomic wireless mouse",
+            "stock_quantity": 50
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.06
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T01:20:05.566491+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Wireless Mouse"
+          },
+          "success": true,
+          "result": [
+            {
+              "id": 2,
+              "name": "Wireless Mouse",
+              "sku": "SC1-WM-001",
+              "description": "Ergonomic wireless mouse",
+              "price": 29.99,
+              "stock_quantity": 50,
+              "is_active": true,
+              "created_at": "2026-03-11T19:28:04.705797"
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.014
+        }
+      ],
+      "total_steps": 3,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC1-WM-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC1-WM-001",
+            "field": "name",
+            "value": "Wireless Mouse"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC1-WM-001",
+            "field": "price",
+            "value": 29.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC1-WM-001",
+            "field": "stock_quantity",
+            "value": 50
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.2889,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.7156
+      }
+    },
+    {
+      "scenario_id": "create_and_verify_product",
+      "prompt": "Create a product called 'Mechanical Keyboard' with SKU 'SC2-KB-001', price $89.99, 200 units in stock. Then retrieve the product to verify it was created correctly.",
+      "expected_tools": [
+        "create_product",
+        "get_product"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 16.87,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T01:20:08.708144+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Mechanical Keyboard",
+            "sku": "SC2-KB-001",
+            "price": 89.99,
+            "stock_quantity": 200
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.065
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T01:20:12.010971+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Mechanical Keyboard",
+            "sku": "SC2-KB-001",
+            "price": 89.99,
+            "description": "",
+            "stock_quantity": 200
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.056
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T01:20:14.698882+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Mechanical Keyboard"
+          },
+          "success": true,
+          "result": [
+            {
+              "id": 3,
+              "name": "Mechanical Keyboard",
+              "sku": "SC2-KB-001",
+              "description": "",
+              "price": 89.99,
+              "stock_quantity": 200,
+              "is_active": true,
+              "created_at": "2026-03-11T19:28:11.102973"
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T01:20:17.829284+05:30",
+          "tool_name": "get_product",
+          "arguments": {
+            "product_id": 3
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "name": "Mechanical Keyboard",
+            "sku": "SC2-KB-001",
+            "description": "",
+            "price": 89.99,
+            "stock_quantity": 200,
+            "is_active": true,
+            "created_at": "2026-03-11T19:28:11.102973"
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        }
+      ],
+      "total_steps": 4,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC2-KB-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC2-KB-001",
+            "field": "name",
+            "value": "Mechanical Keyboard"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC2-KB-001",
+            "field": "price",
+            "value": 89.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC2-KB-001",
+            "field": "stock_quantity",
+            "value": 200
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.4667,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.7867
+      }
+    },
+    {
+      "scenario_id": "product_and_order",
+      "prompt": "Create a product called 'USB Hub' with SKU 'SC3-UH-001', price $19.99, 100 units in stock. Then create an order for customer 'Jane Smith' (jane.sc3@test.com) buying 3 units of that product.",
+      "expected_tools": [
+        "create_product",
+        "create_order"
+      ],
+      "max_steps": 6,
+      "elapsed_s": 19.28,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T01:20:25.398986+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "USB Hub",
+            "sku": "SC3-UH-001",
+            "price": 19.99,
+            "stock_quantity": 100
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.065
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T01:20:28.485868+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "USB Hub",
+            "sku": "SC3-UH-001",
+            "price": 19.99,
+            "description": "",
+            "stock_quantity": 100
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.135
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T01:20:32.630762+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "USB Hub"
+          },
+          "success": true,
+          "result": [
+            {
+              "id": 4,
+              "name": "USB Hub",
+              "sku": "SC3-UH-001",
+              "description": "",
+              "price": 19.99,
+              "stock_quantity": 94,
+              "is_active": true,
+              "created_at": "2026-03-11T19:28:20.797661"
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T01:20:36.856033+05:30",
+          "tool_name": "create_order",
+          "arguments": {
+            "customer_name": "Jane Smith",
+            "customer_email": "jane.sc3@test.com",
+            "items": [
+              {
+                "product_id": 4,
+                "quantity": 3
+              }
+            ]
+          },
+          "success": true,
+          "result": {
+            "id": 14,
+            "customer_name": "Jane Smith",
+            "customer_email": "jane.sc3@test.com",
+            "status": "pending",
+            "total_amount": 57.0,
+            "created_at": "2026-03-11T19:50:36.860794",
+            "items": [
+              {
+                "id": 17,
+                "product_id": 4,
+                "quantity": 19,
+                "unit_price": 3.0
+              }
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        }
+      ],
+      "total_steps": 4,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC3-UH-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC3-UH-001",
+            "field": "price",
+            "value": 19.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "jane.sc3@test.com"
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 0.4667,
+        "ground_truth": 0.6667,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.5867
+      }
+    },
+    {
+      "scenario_id": "update_product_price",
+      "prompt": "Create a product called 'Bluetooth Speaker' with SKU 'SC4-BS-001', price $49.99, and 30 units in stock. Then update the product's price to $39.99.",
+      "expected_tools": [
+        "create_product",
+        "update_product"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 18.87,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T01:20:46.043006+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Bluetooth Speaker",
+            "sku": "SC4-BS-001",
+            "price": 49.99,
+            "stock_quantity": 30
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.065
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T01:20:49.368383+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Bluetooth Speaker",
+            "sku": "SC4-BS-001",
+            "price": 49.99,
+            "stock_quantity": 30,
+            "description": ""
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.057
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T01:20:52.157552+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Bluetooth Speaker"
+          },
+          "success": true,
+          "result": [
+            {
+              "id": 5,
+              "name": "Bluetooth Speaker",
+              "sku": "SC4-BS-001",
+              "description": "",
+              "price": 39.99,
+              "stock_quantity": 30,
+              "is_active": true,
+              "created_at": "2026-03-11T19:28:32.512697"
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.01
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T01:20:56.319101+05:30",
+          "tool_name": "update_product",
+          "arguments": {
+            "product_id": 5,
+            "price": 39.99
+          },
+          "success": true,
+          "result": {
+            "id": 5,
+            "name": "Bluetooth Speaker",
+            "sku": "SC4-BS-001",
+            "description": "",
+            "price": 39.99,
+            "stock_quantity": 30,
+            "is_active": true,
+            "created_at": "2026-03-11T19:28:32.512697"
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        }
+      ],
+      "total_steps": 4,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC4-BS-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC4-BS-001",
+            "field": "name",
+            "value": "Bluetooth Speaker"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC4-BS-001",
+            "field": "price",
+            "value": 39.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC4-BS-001",
+            "field": "stock_quantity",
+            "value": 30
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.4667,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.7867
+      }
+    },
+    {
+      "scenario_id": "search_product",
+      "prompt": "Create a product called 'Gaming Headset Pro' with SKU 'SC5-GH-001', price $79.99, description 'Surround sound gaming headset', and 60 units in stock. Then search for products matching 'Gaming Headset' and confirm the product appears in the results.",
+      "expected_tools": [
+        "create_product",
+        "search_products"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 19.13,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T01:21:04.984682+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Gaming Headset Pro",
+            "sku": "SC5-GH-001",
+            "price": 79.99,
+            "description": "Surround sound gaming headset",
+            "stock_quantity": 60
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.066
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T01:21:08.349058+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Gaming Headset Pro",
+            "sku": "SC5-GH-001",
+            "price": 79.99,
+            "description": "Surround sound gaming headset",
+            "stock_quantity": 60
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.053
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T01:21:11.612001+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Gaming Headset"
+          },
+          "success": true,
+          "result": [
+            {
+              "id": 6,
+              "name": "Gaming Headset Pro",
+              "sku": "SC5-GH-001",
+              "description": "Surround sound gaming headset",
+              "price": 79.99,
+              "stock_quantity": 60,
+              "is_active": true,
+              "created_at": "2026-03-11T19:28:45.028752"
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T01:21:14.977718+05:30",
+          "tool_name": "get_product",
+          "arguments": {
+            "product_id": 6
+          },
+          "success": true,
+          "result": {
+            "id": 6,
+            "name": "Gaming Headset Pro",
+            "sku": "SC5-GH-001",
+            "description": "Surround sound gaming headset",
+            "price": 79.99,
+            "stock_quantity": 60,
+            "is_active": true,
+            "created_at": "2026-03-11T19:28:45.028752"
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        }
+      ],
+      "total_steps": 4,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC5-GH-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC5-GH-001",
+            "field": "name",
+            "value": "Gaming Headset Pro"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC5-GH-001",
+            "field": "price",
+            "value": 79.99
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.4667,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.7867
+      }
+    },
+    {
+      "scenario_id": "deactivate_product",
+      "prompt": "Create a product called 'Old Webcam' with SKU 'SC6-OW-001', price $15.00, and 5 units in stock. Then deactivate the product (set is_active to false) because it is discontinued.",
+      "expected_tools": [
+        "create_product",
+        "update_product"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 18.28,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T01:21:23.610342+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Old Webcam",
+            "sku": "SC6-OW-001",
+            "price": 15.0,
+            "stock_quantity": 5
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.058
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T01:21:26.965955+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Old Webcam",
+            "sku": "SC6-OW-001",
+            "price": 15.0,
+            "description": "Discontinued webcam model",
+            "stock_quantity": 5
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.065
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T01:21:29.459156+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Old Webcam"
+          },
+          "success": true,
+          "result": [
+            {
+              "id": 7,
+              "name": "Old Webcam",
+              "sku": "SC6-OW-001",
+              "description": "",
+              "price": 15.0,
+              "stock_quantity": 5,
+              "is_active": false,
+              "created_at": "2026-03-11T19:28:58.178974"
+            },
+            {
+              "id": 14,
+              "name": "Old Webcam",
+              "sku": "SC11-OW-001",
+              "description": "",
+              "price": 15.0,
+              "stock_quantity": 5,
+              "is_active": true,
+              "created_at": "2026-03-11T19:42:24.655213"
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T01:21:33.323333+05:30",
+          "tool_name": "get_product",
+          "arguments": {
+            "product_id": 7
+          },
+          "success": true,
+          "result": {
+            "id": 7,
+            "name": "Old Webcam",
+            "sku": "SC6-OW-001",
+            "description": "",
+            "price": 15.0,
+            "stock_quantity": 5,
+            "is_active": false,
+            "created_at": "2026-03-11T19:28:58.178974"
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        }
+      ],
+      "total_steps": 4,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC6-OW-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC6-OW-001",
+            "field": "is_active",
+            "value": false
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.4667,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.7867
+      }
+    },
+    {
+      "scenario_id": "bulk_product_creation",
+      "prompt": "Create two products:\n  1. 'Monitor Stand' with SKU 'SC7-MS-001', price $34.99, 40 units in stock.\n  2. 'Desk Lamp' with SKU 'SC7-DL-001', price $24.99, 75 units in stock.\nThen list all products to confirm both were added.",
+      "expected_tools": [
+        "create_product",
+        "list_products"
+      ],
+      "max_steps": 6,
+      "elapsed_s": 16.61,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T01:21:41.455808+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Monitor Stand",
+            "sku": "SC7-MS-001",
+            "price": 34.99,
+            "stock_quantity": 40
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.069
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T01:21:41.524817+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Desk Lamp",
+            "sku": "SC7-DL-001",
+            "price": 24.99,
+            "stock_quantity": 75
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.076
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T01:21:46.317553+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Monitor Stand",
+            "sku": "SC7-MS-001",
+            "price": 34.99,
+            "stock_quantity": 40,
+            "description": ""
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.056
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T01:21:46.373884+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Desk Lamp",
+            "sku": "SC7-DL-001",
+            "price": 24.99,
+            "stock_quantity": 75,
+            "description": ""
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.128
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-12T01:21:48.914629+05:30",
+          "tool_name": "list_products",
+          "arguments": {
+            "active_only": false
+          },
+          "success": true,
+          "result": [
+            {
+              "id": 14,
+              "name": "Old Webcam",
+              "sku": "SC11-OW-001",
+              "description": "",
+              "price": 15.0,
+              "stock_quantity": 5,
+              "is_active": true,
+              "created_at": "2026-03-11T19:42:24.655213"
+            },
+            {
+              "id": 13,
+              "name": "Wireless Charger",
+              "sku": "SC10-WC-001",
+              "description": "",
+              "price": 35.0,
+              "stock_quantity": 135,
+              "is_active": true,
+              "created_at": "2026-03-11T19:29:58.283298"
+            },
+            {
+              "id": 12,
+              "name": "Pen Set",
+              "sku": "SC9-PS-001",
+              "description": "",
+              "price": 8.49,
+              "stock_quantity": 285,
+              "is_active": true,
+              "created_at": "2026-03-11T19:29:45.173263"
+            },
+            {
+              "id": 11,
+              "name": "Notebook",
+              "sku": "SC9-NB-001",
+              "description": "",
+              "price": 12.99,
+              "stock_quantity": 470,
+              "is_active": true,
+              "created_at": "2026-03-11T19:29:42.247902"
+            },
+            {
+              "id": 10,
+              "name": "Ergonomic Chair",
+              "sku": "SC8-EC-001",
+              "description": "",
+              "price": 299.99,
+              "stock_quantity": 16,
+              "is_active": true,
+              "created_at": "2026-03-11T19:29:21.995701"
+            },
+            {
+              "id": 9,
+              "name": "Desk Lamp",
+              "sku": "SC7-DL-001",
+              "description": "",
+              "price": 24.99,
+              "stock_quantity": 75,
+              "is_active": true,
+              "created_at": "2026-03-11T19:29:11.344913"
+            },
+            {
+              "id": 8,
+              "name": "Monitor Stand",
+              "sku": "SC7-MS-001",
+              "description": "",
+              "price": 34.99,
+              "stock_quantity": 40,
+              "is_active": true,
+              "created_at": "2026-03-11T19:29:08.664645"
+            },
+            {
+              "id": 7,
+              "name": "Old Webcam",
+              "sku": "SC6-OW-001",
+              "description": "",
+              "price": 15.0,
+              "stock_quantity": 5,
+              "is_active": false,
+              "created_at": "2026-03-11T19:28:58.178974"
+            },
+            {
+              "id": 6,
+              "name": "Gaming Headset Pro",
+              "sku": "SC5-GH-001",
+              "description": "Surround sound gaming headset",
+              "price": 79.99,
+              "stock_quantity": 60,
+              "is_active": true,
+              "created_at": "2026-03-11T19:28:45.028752"
+            },
+            {
+              "id": 5,
+              "name": "Bluetooth Speaker",
+              "sku": "SC4-BS-001",
+              "description": "",
+              "price": 39.99,
+              "stock_quantity": 30,
+              "is_active": true,
+              "created_at": "2026-03-11T19:28:32.512697"
+            },
+            {
+              "id": 4,
+              "name": "USB Hub",
+              "sku": "SC3-UH-001",
+              "description": "",
+              "price": 19.99,
+              "stock_quantity": 91,
+              "is_active": true,
+              "created_at": "2026-03-11T19:28:20.797661"
+            },
+            {
+              "id": 3,
+              "name": "Mechanical Keyboard",
+              "sku": "SC2-KB-001",
+              "description": "",
+              "price": 89.99,
+              "stock_quantity": 200,
+              "is_active": true,
+              "created_at": "2026-03-11T19:28:11.102973"
+            },
+            {
+              "id": 2,
+              "name": "Wireless Mouse",
+              "sku": "SC1-WM-001",
+              "description": "Ergonomic wireless mouse",
+              "price": 29.99,
+              "stock_quantity": 50,
+              "is_active": true,
+              "created_at": "2026-03-11T19:28:04.705797"
+            },
+            {
+              "id": 1,
+              "name": "Test Widget",
+              "sku": "TW-STEP1",
+              "description": "",
+              "price": 19.99,
+              "stock_quantity": 47,
+              "is_active": true,
+              "created_at": "2026-03-11T17:54:19.621972"
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.011
+        }
+      ],
+      "total_steps": 5,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC7-MS-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC7-MS-001",
+            "field": "price",
+            "value": 34.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC7-DL-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC7-DL-001",
+            "field": "price",
+            "value": 24.99
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.1733,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.6693
+      }
+    },
+    {
+      "scenario_id": "full_order_workflow",
+      "prompt": "Create a product called 'Ergonomic Chair' with SKU 'SC8-EC-001', price $299.99, and 20 units in stock. Then create an order for customer 'Bob Wilson' (bob.sc8@test.com) buying 2 units of the chair. Finally, retrieve the order details to verify it was created correctly.",
+      "expected_tools": [
+        "create_product",
+        "create_order",
+        "get_order_detail"
+      ],
+      "max_steps": 8,
+      "elapsed_s": 28.18,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T01:21:57.744562+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Ergonomic Chair",
+            "sku": "SC8-EC-001",
+            "price": 299.99,
+            "stock_quantity": 20
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.058
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T01:22:00.939199+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Ergonomic Chair",
+            "sku": "SC8-EC-001",
+            "price": 299.99,
+            "description": "Ergonomic Chair",
+            "stock_quantity": 20
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.059
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T01:22:03.647966+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Ergonomic Chair"
+          },
+          "success": true,
+          "result": [
+            {
+              "id": 10,
+              "name": "Ergonomic Chair",
+              "sku": "SC8-EC-001",
+              "description": "",
+              "price": 299.99,
+              "stock_quantity": 16,
+              "is_active": true,
+              "created_at": "2026-03-11T19:29:21.995701"
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T01:22:07.276407+05:30",
+          "tool_name": "update_product",
+          "arguments": {
+            "product_id": 10,
+            "stock_quantity": 20
+          },
+          "success": true,
+          "result": {
+            "id": 10,
+            "name": "Ergonomic Chair",
+            "sku": "SC8-EC-001",
+            "description": "",
+            "price": 299.99,
+            "stock_quantity": 20,
+            "is_active": true,
+            "created_at": "2026-03-11T19:29:21.995701"
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-12T01:22:11.261529+05:30",
+          "tool_name": "create_order",
+          "arguments": {
+            "customer_name": "Bob Wilson",
+            "customer_email": "bob.sc8@test.com",
+            "items": [
+              {
+                "product_id": 10,
+                "quantity": 2
+              }
+            ]
+          },
+          "success": true,
+          "result": {
+            "id": 15,
+            "customer_name": "Bob Wilson",
+            "customer_email": "bob.sc8@test.com",
+            "status": "pending",
+            "total_amount": 598.0,
+            "created_at": "2026-03-11T19:52:11.266550",
+            "items": [
+              {
+                "id": 18,
+                "product_id": 10,
+                "quantity": 299,
+                "unit_price": 2.0
+              }
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-12T01:22:13.914442+05:30",
+          "tool_name": "get_order_detail",
+          "arguments": {
+            "order_id": 15
+          },
+          "success": true,
+          "result": {
+            "id": 15,
+            "customer_name": "Bob Wilson",
+            "customer_email": "bob.sc8@test.com",
+            "status": "pending",
+            "total_amount": 598.0,
+            "items": []
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-12T01:22:17.018809+05:30",
+          "tool_name": "get_order",
+          "arguments": {
+            "order_id": 15
+          },
+          "success": true,
+          "result": {
+            "id": 15,
+            "customer_name": "Bob Wilson",
+            "customer_email": "bob.sc8@test.com",
+            "status": "pending",
+            "total_amount": 598.0,
+            "created_at": "2026-03-11T19:52:11.266550",
+            "items": [
+              {
+                "id": 18,
+                "product_id": 10,
+                "quantity": 299,
+                "unit_price": 2.0
+              }
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        }
+      ],
+      "total_steps": 7,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC8-EC-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC8-EC-001",
+            "field": "price",
+            "value": 299.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "bob.sc8@test.com"
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_has_items",
+            "customer_email": "bob.sc8@test.com",
+            "expected_count": 1
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 0.6952,
+        "ground_truth": 0.5,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.5781
+      }
+    },
+    {
+      "scenario_id": "multi_item_order",
+      "prompt": "Create two products:\n  1. 'Notebook' with SKU 'SC9-NB-001', price $12.99, 500 units in stock.\n  2. 'Pen Set' with SKU 'SC9-PS-001', price $8.49, 300 units in stock.\nThen create a single order for customer 'Alice Brown' (alice.sc9@test.com) that contains both products: 10 notebooks and 5 pen sets.",
+      "expected_tools": [
+        "create_product",
+        "create_order"
+      ],
+      "max_steps": 8,
+      "elapsed_s": 24.64,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T01:22:26.679723+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Notebook",
+            "sku": "SC9-NB-001",
+            "price": 12.99,
+            "stock_quantity": 500
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.062
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T01:22:26.742506+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Pen Set",
+            "sku": "SC9-PS-001",
+            "price": 8.49,
+            "stock_quantity": 300
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.058
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T01:22:31.463592+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Notebook",
+            "sku": "SC9-NB-001",
+            "price": 12.99,
+            "description": "",
+            "stock_quantity": 500
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.058
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T01:22:31.522255+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Pen Set",
+            "sku": "SC9-PS-001",
+            "price": 8.49,
+            "description": "",
+            "stock_quantity": 300
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.06
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-12T01:22:34.430642+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Notebook"
+          },
+          "success": true,
+          "result": [
+            {
+              "id": 11,
+              "name": "Notebook",
+              "sku": "SC9-NB-001",
+              "description": "",
+              "price": 12.99,
+              "stock_quantity": 470,
+              "is_active": true,
+              "created_at": "2026-03-11T19:29:42.247902"
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-12T01:22:34.441842+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Pen Set"
+          },
+          "success": true,
+          "result": [
+            {
+              "id": 12,
+              "name": "Pen Set",
+              "sku": "SC9-PS-001",
+              "description": "",
+              "price": 8.49,
+              "stock_quantity": 285,
+              "is_active": true,
+              "created_at": "2026-03-11T19:29:45.173263"
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.052
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-12T01:22:39.147721+05:30",
+          "tool_name": "create_order",
+          "arguments": {
+            "customer_name": "Alice Brown",
+            "customer_email": "alice.sc9@test.com",
+            "items": [
+              {
+                "product_id": 11,
+                "quantity": 10
+              },
+              {
+                "product_id": 12,
+                "quantity": 5
+              }
+            ]
+          },
+          "success": true,
+          "result": {
+            "id": 16,
+            "customer_name": "Alice Brown",
+            "customer_email": "alice.sc9@test.com",
+            "status": "pending",
+            "total_amount": 160.0,
+            "created_at": "2026-03-11T19:52:39.152511",
+            "items": [
+              {
+                "id": 19,
+                "product_id": 11,
+                "quantity": 12,
+                "unit_price": 10.0
+              },
+              {
+                "id": 20,
+                "product_id": 12,
+                "quantity": 8,
+                "unit_price": 5.0
+              }
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-12T01:22:41.574304+05:30",
+          "tool_name": "get_order_detail",
+          "arguments": {
+            "order_id": 16
+          },
+          "success": true,
+          "result": {
+            "id": 16,
+            "customer_name": "Alice Brown",
+            "customer_email": "alice.sc9@test.com",
+            "status": "pending",
+            "total_amount": 160.0,
+            "items": []
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        }
+      ],
+      "total_steps": 8,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC9-NB-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC9-PS-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "alice.sc9@test.com"
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_has_items",
+            "customer_email": "alice.sc9@test.com",
+            "expected_count": 2
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 0.4667,
+        "ground_truth": 0.5,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.4867
+      }
+    },
+    {
+      "scenario_id": "price_change_then_order",
+      "prompt": "Create a product called 'Wireless Charger' with SKU 'SC10-WC-001', price $45.00, and 150 units in stock. The price is wrong \u2014 update it to $35.00. Then create an order for customer 'Charlie Davis' (charlie.sc10@test.com) buying 5 units of the charger at the corrected price. Finally, retrieve the order summary to confirm the order.",
+      "expected_tools": [
+        "create_product",
+        "update_product",
+        "create_order",
+        "get_order_summary"
+      ],
+      "max_steps": 10,
+      "elapsed_s": 29.09,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T01:22:50.618778+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Charger",
+            "sku": "SC10-WC-001",
+            "price": 45.0,
+            "stock_quantity": 150
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.054
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T01:22:53.595729+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Charger",
+            "sku": "SC10-WC-001",
+            "price": 45.0,
+            "description": "",
+            "stock_quantity": 150
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_product': Client error '400 Bad Request' for url 'http://localhost:8000/products'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.087
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T01:22:56.145837+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Wireless Charger"
+          },
+          "success": true,
+          "result": [
+            {
+              "id": 13,
+              "name": "Wireless Charger",
+              "sku": "SC10-WC-001",
+              "description": "",
+              "price": 35.0,
+              "stock_quantity": 135,
+              "is_active": true,
+              "created_at": "2026-03-11T19:29:58.283298"
+            }
+          ],
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T01:23:01.141001+05:30",
+          "tool_name": "update_product",
+          "arguments": {
+            "product_id": 13,
+            "price": 45.0,
+            "stock_quantity": 150
+          },
+          "success": true,
+          "result": {
+            "id": 13,
+            "name": "Wireless Charger",
+            "sku": "SC10-WC-001",
+            "description": "",
+            "price": 45.0,
+            "stock_quantity": 150,
+            "is_active": true,
+            "created_at": "2026-03-11T19:29:58.283298"
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-12T01:23:04.168933+05:30",
+          "tool_name": "update_product",
+          "arguments": {
+            "product_id": 13,
+            "price": 35.0
+          },
+          "success": true,
+          "result": {
+            "id": 13,
+            "name": "Wireless Charger",
+            "sku": "SC10-WC-001",
+            "description": "",
+            "price": 35.0,
+            "stock_quantity": 150,
+            "is_active": true,
+            "created_at": "2026-03-11T19:29:58.283298"
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-12T01:23:07.351364+05:30",
+          "tool_name": "create_order",
+          "arguments": {
+            "customer_name": "Charlie Davis",
+            "customer_email": "charlie.sc10@test.com",
+            "items": [
+              {
+                "product_id": 13,
+                "quantity": 5
+              }
+            ]
+          },
+          "success": true,
+          "result": {
+            "id": 17,
+            "customer_name": "Charlie Davis",
+            "customer_email": "charlie.sc10@test.com",
+            "status": "pending",
+            "total_amount": 175.0,
+            "created_at": "2026-03-11T19:53:07.357198",
+            "items": [
+              {
+                "id": 21,
+                "product_id": 13,
+                "quantity": 35,
+                "unit_price": 5.0
+              }
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-12T01:23:10.368543+05:30",
+          "tool_name": "get_order_summary",
+          "arguments": {
+            "order_id": 17
+          },
+          "success": true,
+          "result": {
+            "order_id": 17,
+            "customer_name": "Charlie Davis",
+            "total": 169.92,
+            "item_count": 1,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        }
+      ],
+      "total_steps": 7,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC10-WC-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC10-WC-001",
+            "field": "price",
+            "value": 35.0
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "charlie.sc10@test.com"
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 0.6476,
+        "ground_truth": 0.6667,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.659
+      }
+    }
+  ],
+  "avg_reward": 0.6842
+}

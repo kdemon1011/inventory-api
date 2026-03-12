@@ -1,0 +1,1393 @@
+{
+  "run_id": "run_20260312_0100",
+  "model": "gpt-5-mini",
+  "gym": "inventory",
+  "timestamp": "2026-03-12T08:55:16.577389+05:30",
+  "temperature": 1.0,
+  "reward_mode": "openenv",
+  "total_elapsed_s": 244.33,
+  "total_scenarios": 10,
+  "scenarios": [
+    {
+      "scenario_id": "create_product",
+      "prompt": "Create a product called 'Wireless Mouse' with SKU 'SC1-WM-001', price $29.99, description 'Ergonomic wireless mouse', and 50 units in stock.",
+      "expected_tools": [
+        "create_product"
+      ],
+      "max_steps": 3,
+      "elapsed_s": 8.4,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T08:51:15.021422+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Mouse",
+            "sku": "SC1-WM-001",
+            "price": 29.99,
+            "description": "Ergonomic wireless mouse",
+            "stock_quantity": 50
+          },
+          "success": false,
+          "result": {
+            "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+          },
+          "error": "unhandled errors in a TaskGroup (1 sub-exception)",
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T08:51:16.974332+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Mouse",
+            "sku": "SC1-WM-001",
+            "price": 29.99,
+            "description": "Ergonomic wireless mouse",
+            "stock_quantity": 50
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.002
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T08:51:20.633358+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Mouse",
+            "sku": "SC1-WM-001",
+            "price": 29.99,
+            "description": "Ergonomic wireless mouse",
+            "stock_quantity": 50
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        }
+      ],
+      "total_steps": 3,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC1-WM-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC1-WM-001",
+            "field": "name",
+            "value": "Wireless Mouse"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC1-WM-001",
+            "field": "price",
+            "value": 29.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC1-WM-001",
+            "field": "stock_quantity",
+            "value": 50
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.0,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.6
+      }
+    },
+    {
+      "scenario_id": "create_and_verify_product",
+      "prompt": "Create a product called 'Mechanical Keyboard' with SKU 'SC2-KB-001', price $89.99, 200 units in stock. Then retrieve the product to verify it was created correctly.",
+      "expected_tools": [
+        "create_product",
+        "get_product"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 15.41,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T08:51:23.296707+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Mechanical Keyboard",
+            "sku": "SC2-KB-001",
+            "price": 89.99,
+            "description": "Mechanical keyboard with customizable RGB and hot-swappable switches.",
+            "stock_quantity": 200
+          },
+          "success": false,
+          "result": {
+            "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+          },
+          "error": "unhandled errors in a TaskGroup (1 sub-exception)",
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T08:51:25.311287+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Mechanical Keyboard",
+            "sku": "SC2-KB-001",
+            "price": 89.99,
+            "description": "Mechanical keyboard with customizable RGB and hot-swappable switches.",
+            "stock_quantity": 200
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T08:51:29.216883+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Mechanical Keyboard",
+            "sku": "SC2-KB-001",
+            "price": 89.99,
+            "description": "Mechanical keyboard with customizable RGB and hot-swappable switches.",
+            "stock_quantity": 200
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T08:51:31.564528+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "SC2-KB-001"
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.002
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-12T08:51:36.055405+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Mechanical Keyboard",
+            "sku": "SC2-KB-001",
+            "price": 89.99,
+            "description": "Mechanical keyboard with customizable RGB and hot-swappable switches.",
+            "stock_quantity": 200
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        }
+      ],
+      "total_steps": 5,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC2-KB-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC2-KB-001",
+            "field": "name",
+            "value": "Mechanical Keyboard"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC2-KB-001",
+            "field": "price",
+            "value": 89.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC2-KB-001",
+            "field": "stock_quantity",
+            "value": 200
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.0,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.6
+      }
+    },
+    {
+      "scenario_id": "product_and_order",
+      "prompt": "Create a product called 'USB Hub' with SKU 'SC3-UH-001', price $19.99, 100 units in stock. Then create an order for customer 'Jane Smith' (jane.sc3@test.com) buying 3 units of that product.",
+      "expected_tools": [
+        "create_product",
+        "create_order"
+      ],
+      "max_steps": 6,
+      "elapsed_s": 30.69,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T08:51:39.036926+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "USB Hub",
+            "sku": "SC3-UH-001",
+            "price": 19.99,
+            "description": "4-port USB 3.0 hub",
+            "stock_quantity": 100
+          },
+          "success": false,
+          "result": {
+            "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+          },
+          "error": "unhandled errors in a TaskGroup (1 sub-exception)",
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T08:51:41.094931+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "USB Hub",
+            "sku": "SC3-UH-001",
+            "price": 19.99,
+            "stock_quantity": 100
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T08:51:42.750726+05:30",
+          "tool_name": "list_products",
+          "arguments": {
+            "active_only": true
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T08:51:48.497683+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "USB Hub",
+            "sku": "SC3-UH-001",
+            "price": 19.99,
+            "stock_quantity": 100
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-12T08:51:52.997498+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "USB Hub"
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        }
+      ],
+      "total_steps": 5,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC3-UH-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC3-UH-001",
+            "field": "price",
+            "value": 19.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "jane.sc3@test.com"
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 0.0,
+        "ground_truth": 0.6667,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.4
+      }
+    },
+    {
+      "scenario_id": "update_product_price",
+      "prompt": "Create a product called 'Bluetooth Speaker' with SKU 'SC4-BS-001', price $49.99, and 30 units in stock. Then update the product's price to $39.99.",
+      "expected_tools": [
+        "create_product",
+        "update_product"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 22.8,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T08:52:10.735936+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Bluetooth Speaker",
+            "sku": "SC4-BS-001",
+            "price": 49.99,
+            "description": "Portable Bluetooth speaker",
+            "stock_quantity": 30
+          },
+          "success": false,
+          "result": {
+            "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+          },
+          "error": "unhandled errors in a TaskGroup (1 sub-exception)",
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T08:52:12.412876+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Bluetooth Speaker",
+            "sku": "SC4-BS-001",
+            "price": 49.99,
+            "description": "Portable Bluetooth speaker",
+            "stock_quantity": 30
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T08:52:14.842279+05:30",
+          "tool_name": "list_products",
+          "arguments": {
+            "active_only": true
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.002
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T08:52:17.966224+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Bluetooth Speaker",
+            "sku": "SC4-BS-001",
+            "price": 49.99,
+            "description": "Portable Bluetooth speaker",
+            "stock_quantity": 30
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        }
+      ],
+      "total_steps": 4,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC4-BS-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC4-BS-001",
+            "field": "name",
+            "value": "Bluetooth Speaker"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC4-BS-001",
+            "field": "price",
+            "value": 39.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC4-BS-001",
+            "field": "stock_quantity",
+            "value": 30
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.0,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.6
+      }
+    },
+    {
+      "scenario_id": "search_product",
+      "prompt": "Create a product called 'Gaming Headset Pro' with SKU 'SC5-GH-001', price $79.99, description 'Surround sound gaming headset', and 60 units in stock. Then search for products matching 'Gaming Headset' and confirm the product appears in the results.",
+      "expected_tools": [
+        "create_product",
+        "search_products"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 17.7,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T08:52:31.993869+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Gaming Headset Pro",
+            "sku": "SC5-GH-001",
+            "price": 79.99,
+            "description": "Surround sound gaming headset",
+            "stock_quantity": 60
+          },
+          "success": false,
+          "result": {
+            "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+          },
+          "error": "unhandled errors in a TaskGroup (1 sub-exception)",
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T08:52:33.908646+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Gaming Headset Pro",
+            "sku": "SC5-GH-001",
+            "price": 79.99,
+            "description": "Surround sound gaming headset",
+            "stock_quantity": 60
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T08:52:37.275640+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Gaming Headset"
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T08:52:40.460281+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Gaming Headset Pro",
+            "sku": "SC5-GH-001",
+            "price": 79.99,
+            "description": "Surround sound gaming headset",
+            "stock_quantity": 60
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.002
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-12T08:52:47.287914+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Gaming Headset Pro",
+            "sku": "SC5-GH-001",
+            "price": 79.99,
+            "description": "Surround sound gaming headset",
+            "stock_quantity": 60
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-12T08:52:47.289499+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Gaming Headset"
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        }
+      ],
+      "total_steps": 6,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC5-GH-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC5-GH-001",
+            "field": "name",
+            "value": "Gaming Headset Pro"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC5-GH-001",
+            "field": "price",
+            "value": 79.99
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.0,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.6
+      }
+    },
+    {
+      "scenario_id": "deactivate_product",
+      "prompt": "Create a product called 'Old Webcam' with SKU 'SC6-OW-001', price $15.00, and 5 units in stock. Then deactivate the product (set is_active to false) because it is discontinued.",
+      "expected_tools": [
+        "create_product",
+        "update_product"
+      ],
+      "max_steps": 5,
+      "elapsed_s": 20.73,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T08:52:49.652637+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Old Webcam",
+            "sku": "SC6-OW-001",
+            "price": 15.0,
+            "description": "Discontinued older model webcam",
+            "stock_quantity": 5
+          },
+          "success": false,
+          "result": {
+            "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+          },
+          "error": "unhandled errors in a TaskGroup (1 sub-exception)",
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T08:52:51.384928+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Old Webcam",
+            "sku": "SC6-OW-001",
+            "price": 15.0,
+            "description": "Discontinued older model webcam",
+            "stock_quantity": 5
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T08:52:52.781167+05:30",
+          "tool_name": "list_products",
+          "arguments": {
+            "active_only": false
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T08:52:55.682374+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Old Webcam",
+            "sku": "SC6-OW-001",
+            "price": 15.0,
+            "description": "Discontinued older model webcam",
+            "stock_quantity": 5
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        }
+      ],
+      "total_steps": 4,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC6-OW-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC6-OW-001",
+            "field": "is_active",
+            "value": false
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.0,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.6
+      }
+    },
+    {
+      "scenario_id": "bulk_product_creation",
+      "prompt": "Create two products:\n  1. 'Monitor Stand' with SKU 'SC7-MS-001', price $34.99, 40 units in stock.\n  2. 'Desk Lamp' with SKU 'SC7-DL-001', price $24.99, 75 units in stock.\nThen list all products to confirm both were added.",
+      "expected_tools": [
+        "create_product",
+        "list_products"
+      ],
+      "max_steps": 6,
+      "elapsed_s": 33.5,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T08:53:11.334806+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Monitor Stand",
+            "sku": "SC7-MS-001",
+            "price": 34.99,
+            "description": "Ergonomic monitor stand to elevate screens.",
+            "stock_quantity": 40
+          },
+          "success": false,
+          "result": {
+            "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+          },
+          "error": "unhandled errors in a TaskGroup (1 sub-exception)",
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T08:53:13.466511+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Monitor Stand",
+            "sku": "SC7-MS-001",
+            "price": 34.99,
+            "description": "Ergonomic monitor stand to elevate screens.",
+            "stock_quantity": 40
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.002
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T08:53:16.561835+05:30",
+          "tool_name": "list_products",
+          "arguments": {
+            "active_only": true
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.002
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T08:53:24.559258+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Monitor Stand",
+            "sku": "SC7-MS-001",
+            "price": 34.99,
+            "description": "Ergonomic monitor stand to elevate screens.",
+            "stock_quantity": 40
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-12T08:53:24.560901+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Desk Lamp",
+            "sku": "SC7-DL-001",
+            "price": 24.99,
+            "description": "Adjustable LED desk lamp with dimmer.",
+            "stock_quantity": 75
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.002
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-12T08:53:28.827642+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Monitor Stand",
+            "sku": "SC7-MS-001",
+            "price": 34.99,
+            "description": "Ergonomic monitor stand to elevate screens.",
+            "stock_quantity": 40
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        }
+      ],
+      "total_steps": 6,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC7-MS-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC7-MS-001",
+            "field": "price",
+            "value": 34.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC7-DL-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC7-DL-001",
+            "field": "price",
+            "value": 24.99
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.0,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.6
+      }
+    },
+    {
+      "scenario_id": "full_order_workflow",
+      "prompt": "Create a product called 'Ergonomic Chair' with SKU 'SC8-EC-001', price $299.99, and 20 units in stock. Then create an order for customer 'Bob Wilson' (bob.sc8@test.com) buying 2 units of the chair. Finally, retrieve the order details to verify it was created correctly.",
+      "expected_tools": [
+        "create_product",
+        "create_order",
+        "get_order_detail"
+      ],
+      "max_steps": 8,
+      "elapsed_s": 31.77,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T08:53:45.107846+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Ergonomic Chair",
+            "sku": "SC8-EC-001",
+            "price": 299.99,
+            "description": "Comfortable ergonomic office chair",
+            "stock_quantity": 20
+          },
+          "success": false,
+          "result": {
+            "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+          },
+          "error": "unhandled errors in a TaskGroup (1 sub-exception)",
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T08:53:46.851529+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Ergonomic Chair",
+            "sku": "SC8-EC-001",
+            "price": 299.99,
+            "description": "Comfortable ergonomic office chair",
+            "stock_quantity": 20
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T08:53:48.881655+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Ergonomic Chair"
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T08:53:51.923832+05:30",
+          "tool_name": "list_products",
+          "arguments": {
+            "active_only": true
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-12T08:53:57.336773+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Ergonomic Chair",
+            "sku": "SC8-EC-001",
+            "price": 299.99,
+            "description": "Comfortable ergonomic office chair",
+            "stock_quantity": 20
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-12T08:54:01.160968+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Ergonomic Chair",
+            "sku": "SC8-EC-001",
+            "price": 299.99,
+            "description": "Comfortable ergonomic office chair",
+            "stock_quantity": 20
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.002
+        }
+      ],
+      "total_steps": 6,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC8-EC-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC8-EC-001",
+            "field": "price",
+            "value": 299.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "bob.sc8@test.com"
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_has_items",
+            "customer_email": "bob.sc8@test.com",
+            "expected_count": 1
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 0.0,
+        "ground_truth": 0.5,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.3
+      }
+    },
+    {
+      "scenario_id": "multi_item_order",
+      "prompt": "Create two products:\n  1. 'Notebook' with SKU 'SC9-NB-001', price $12.99, 500 units in stock.\n  2. 'Pen Set' with SKU 'SC9-PS-001', price $8.49, 300 units in stock.\nThen create a single order for customer 'Alice Brown' (alice.sc9@test.com) that contains both products: 10 notebooks and 5 pen sets.",
+      "expected_tools": [
+        "create_product",
+        "create_order"
+      ],
+      "max_steps": 8,
+      "elapsed_s": 38.0,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T08:54:15.963924+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Notebook",
+            "sku": "SC9-NB-001",
+            "price": 12.99,
+            "description": "Ruled notebook, 100 pages",
+            "stock_quantity": 500
+          },
+          "success": false,
+          "result": {
+            "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+          },
+          "error": "unhandled errors in a TaskGroup (1 sub-exception)",
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T08:54:17.613341+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Notebook",
+            "sku": "SC9-NB-001",
+            "price": 12.99,
+            "stock_quantity": 500
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T08:54:21.057976+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Notebook",
+            "sku": "SC9-NB-001",
+            "price": 12.99,
+            "description": "Ruled notebook, 100 pages",
+            "stock_quantity": 500
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T08:54:22.737187+05:30",
+          "tool_name": "list_products",
+          "arguments": {
+            "active_only": true
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-12T08:54:31.867163+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Notebook",
+            "sku": "SC9-NB-001",
+            "price": 12.99,
+            "description": "Ruled notebook, 100 pages",
+            "stock_quantity": 500
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.002
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-12T08:54:31.868973+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Pen Set",
+            "sku": "SC9-PS-001",
+            "price": 8.49,
+            "description": "Set of 5 ballpoint pens",
+            "stock_quantity": 300
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-12T08:54:36.738440+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Notebook",
+            "sku": "SC9-NB-001",
+            "price": 12.99,
+            "description": "Ruled notebook, 100 pages",
+            "stock_quantity": 500
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-12T08:54:41.498179+05:30",
+          "tool_name": "list_products",
+          "arguments": {
+            "active_only": false
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        }
+      ],
+      "total_steps": 8,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC9-NB-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC9-PS-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "alice.sc9@test.com"
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_has_items",
+            "customer_email": "alice.sc9@test.com",
+            "expected_count": 2
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 0.0,
+        "ground_truth": 0.5,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.3
+      }
+    },
+    {
+      "scenario_id": "price_change_then_order",
+      "prompt": "Create a product called 'Wireless Charger' with SKU 'SC10-WC-001', price $45.00, and 150 units in stock. The price is wrong \u2014 update it to $35.00. Then create an order for customer 'Charlie Davis' (charlie.sc10@test.com) buying 5 units of the charger at the corrected price. Finally, retrieve the order summary to confirm the order.",
+      "expected_tools": [
+        "create_product",
+        "update_product",
+        "create_order",
+        "get_order_summary"
+      ],
+      "max_steps": 10,
+      "elapsed_s": 25.2,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-12T08:54:54.417149+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Charger",
+            "sku": "SC10-WC-001",
+            "price": 45.0,
+            "description": "Wireless charging pad",
+            "stock_quantity": 150
+          },
+          "success": false,
+          "result": {
+            "error": "unhandled errors in a TaskGroup (1 sub-exception)"
+          },
+          "error": "unhandled errors in a TaskGroup (1 sub-exception)",
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-12T08:54:56.315101+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Charger",
+            "sku": "SC10-WC-001",
+            "price": 45.0,
+            "description": "Wireless charging pad",
+            "stock_quantity": 150
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-12T08:54:57.958326+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "query": "Wireless Charger"
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-12T08:55:00.067820+05:30",
+          "tool_name": "list_products",
+          "arguments": {
+            "active_only": true
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.001
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-12T08:55:04.371831+05:30",
+          "tool_name": "create_product",
+          "arguments": {
+            "name": "Wireless Charger",
+            "sku": "SC10-WC-001",
+            "price": 45.0,
+            "description": "Wireless charging pad",
+            "stock_quantity": 150
+          },
+          "success": false,
+          "result": {
+            "error": "Client is already connected in an async context."
+          },
+          "error": "Client is already connected in an async context.",
+          "elapsed_s": 0.002
+        }
+      ],
+      "total_steps": 5,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "product_exists",
+            "sku": "SC10-WC-001"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_field",
+            "sku": "SC10-WC-001",
+            "field": "price",
+            "value": 35.0
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "customer_email": "charlie.sc10@test.com"
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 0.0,
+        "ground_truth": 0.6667,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.4
+      }
+    }
+  ],
+  "avg_reward": 0.5
+}

@@ -22,7 +22,10 @@ Usage:
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+
+# Indian Standard Time (UTC+5:30)
+IST = timezone(timedelta(hours=5, minutes=30))
 from typing import Any, Dict, List, Optional, Tuple
 
 from openenv.core.mcp_client import MCPToolClient
@@ -128,11 +131,17 @@ class AgentRunner:
       - Routes all actions through OpenEnv (never calls tools directly)
       - Collects logs for reward calculation
 
+    Reward modes:
+      - "custom"  (default): Episode-level reward via RewardCalculator (rewards/base.py)
+      - "openenv": Per-step reward via Transform (rewards/transforms/) + ground truth
+
     Args:
         model: LiteLLM model string (e.g., "gpt-4o", "ollama/llama3")
         openenv_url: URL of the OpenEnv server (e.g., "http://localhost:9000")
         temperature: LLM sampling temperature (0.0 = deterministic)
         max_tokens: Max tokens per LLM response
+        reward_mode: "custom" or "openenv"
+        transform: StepRewardTransform instance (required when reward_mode="openenv")
     """
 
     def __init__(
@@ -141,6 +150,8 @@ class AgentRunner:
         openenv_url: str = "http://localhost:9000",
         temperature: float = 0.0,
         max_tokens: int = 1024,
+        reward_mode: str = "custom",
+        transform=None,
     ):
         self.llm = LLMClient(
             model=model,
@@ -148,7 +159,16 @@ class AgentRunner:
             max_tokens=max_tokens,
         )
         self.openenv_url = openenv_url
+        self.reward_mode = reward_mode
+        self.transform = transform
+
+        # Custom mode: episode-level reward from rewards/base.py
         self.calculator = RewardCalculator()
+
+        # OpenEnv mode: per-step reward from transforms + ground truth
+        if reward_mode == "openenv":
+            from rewards.transforms.base import OpenEnvRewardCalculator
+            self.openenv_calculator = OpenEnvRewardCalculator()
 
     def run_scenario(
         self,
@@ -215,6 +235,7 @@ class AgentRunner:
 
         # 4. Agent loop
         episode = EpisodeLog()
+        step_rewards = []  # Per-step rewards (used in openenv mode only)
         final_answer = None
 
         for step_num in range(1, scenario.max_steps + 1):
@@ -242,7 +263,7 @@ class AgentRunner:
                 logger.info(f"  Tool: {tool_name}({json.dumps(arguments, default=str)[:100]})")
 
                 # Route through OpenEnv — NOT directly to the tool
-                step_ts = datetime.now(timezone.utc).isoformat()
+                step_ts = datetime.now(IST).isoformat()
                 step_start = time.time()
                 error_msg = None
                 try:
@@ -264,6 +285,13 @@ class AgentRunner:
                     obs = None
 
                 step_elapsed = time.time() - step_start
+
+                # OpenEnv mode: apply transform to get per-step reward
+                if self.reward_mode == "openenv" and self.transform and obs is not None:
+                    transformed = self.transform(obs)
+                    step_rewards.append(
+                        transformed.reward if transformed.reward is not None else 0.0
+                    )
 
                 # Log the step (with timestamp + elapsed for trajectory)
                 episode.add_step(
@@ -288,11 +316,17 @@ class AgentRunner:
         # 5. Verify outcomes against ground truth
         outcome_results = checker.check_all(scenario.outcome_checks)
 
-        # 6. Calculate reward — the reward system is the single source of truth
-        breakdown = self.calculator.calculate(
-            episode=episode,
-            scenario=scenario,
-            outcome_results=outcome_results,
-        )
+        # 6. Calculate reward — mode determines which calculator is used
+        if self.reward_mode == "openenv":
+            breakdown = self.openenv_calculator.calculate(
+                step_rewards=step_rewards,
+                outcome_results=outcome_results,
+            )
+        else:
+            breakdown = self.calculator.calculate(
+                episode=episode,
+                scenario=scenario,
+                outcome_results=outcome_results,
+            )
 
         return episode, breakdown
