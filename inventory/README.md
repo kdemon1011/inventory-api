@@ -7,7 +7,7 @@ Inventory management API wrapped as an [OpenEnv](https://github.com/meta-pytorch
 ```
 ┌─────────────────┐         ┌──────────────────────┐         ┌──────────────────┐         ┌──────────┐
 │  LLM Agent      │         │  OpenEnv Server      │         │  Inventory API   │         │  SQLite  │
-│  (run_eval.py)  │ ──WS──► │  (port 9000)         │ ──HTTP─► │  (port 8000)     │ ──────► │  DB      │
+│  (run_eval.py)  │ ──WS──► │  (port 9000)         │ ──HTTP─►│  (port 8000)     │ ──────► │  DB      │
 │                 │ ◄────── │  MCPEnvironment      │ ◄────── │  FastAPI         │ ◄────── │          │
 └─────────────────┘         └──────────────────────┘         └──────────────────┘         └──────────┘
    Decides WHAT to do          Wraps API as MCP tools           CRUD endpoints              Persistent
@@ -26,18 +26,43 @@ Inventory management API wrapped as an [OpenEnv](https://github.com/meta-pytorch
 
 The LLM **never calls the Inventory API directly**. All interactions go through OpenEnv via `env.step()`.
 
+### Concurrent Sessions
+
+Multiple models can evaluate **simultaneously** against a single Docker container. Each session gets its own isolated SQLite database:
+
+```
+┌───────────────────────── Single Docker Container ─────────────────────────┐
+│                                                                            │
+│  OpenEnv Server (port 9000)              Inventory API (port 8000)         │
+│  ┌─────────────────────────┐             ┌─────────────────────────┐       │
+│  │ WS /ws  ──► Env inst 1  │──── HTTP ──►│  X-Session-ID: abc-123  │──► data/sessions/abc-123.db │
+│  │ WS /ws  ──► Env inst 2  │──── HTTP ──►│  X-Session-ID: def-456  │──► data/sessions/def-456.db │
+│  │ WS /ws  ──► Env inst 3  │──── HTTP ──►│  X-Session-ID: ghi-789  │──► data/sessions/ghi-789.db │
+│  └─────────────────────────┘             └─────────────────────────┘       │
+│                                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+- **`SUPPORTS_CONCURRENT_SESSIONS = True`** in the environment class allows OpenEnv to create multiple `InventoryEnvironment` instances
+- Each `env.reset()` creates a unique session ID and requests an isolated DB via `POST /sessions`
+- All subsequent HTTP calls include `X-Session-ID` header → API routes to the correct session DB
+- Ground truth checker is session-aware — it queries the session-specific DB, not the default one
+- Session DBs are cleaned up automatically when the environment closes
+
 ## Files
 
 | File | Role | OpenEnv Class |
 |---|---|---|
-| `server/inventory_environment.py` | 10 MCP tools (CRUD products + orders) | `MCPEnvironment` |
+| `server/inventory_environment.py` | 10 MCP tools + `get_session_info` (CRUD products + orders) | `MCPEnvironment` |
 | `server/app.py` | Auto-generated server (HTTP + WebSocket) | `create_app()` |
 | `Dockerfile` | Docker image (API + OpenEnv in one container) | — |
 | `client.py` | Client + AutoEnv type aliases | `MCPToolClient` |
 | `openenv.yaml` | Environment manifest | — |
 | `pyproject.toml` | Package config (validate / build / uv run) | — |
-| `config.py` | Centralized config (ports, DB path) | — |
-| `main.py` | FastAPI app (products + orders API) | — |
+| `.env` | All configuration (ports, DB URL, concurrency) | — |
+| `main.py` | FastAPI app (products + orders API + session endpoints) | — |
+| `database.py` | SQLAlchemy engine + session-aware `get_db()` | — |
+| `session_manager.py` | Per-session SQLite DB isolation for concurrent evaluation | — |
 | `tests_archived/` | Pre-OpenEnv API unit tests (archived) | — |
 
 ## Running the Gym
@@ -69,11 +94,15 @@ docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
 
 # 3. Verify both servers are ready
 curl http://localhost:9000/health    # → {"status": "healthy"}
+curl http://localhost:9000/metadata  # → {"name": "inventory_env", "version": "0.5.0", ...}
 curl http://localhost:8000/products  # → [...]
 
 # 4. Run an evaluation (AutoEnv discovers and connects automatically)
 cd ..  # repo root
 python run_eval.py --gym inventory --model gpt-4o --save --trajectory
+
+# 4b. Or run multiple models in parallel (concurrent sessions)
+python run_eval.py --gym inventory --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6 --parallel 3 --save --trajectory
 
 # 5. Stop and remove when done
 docker stop inventory && docker rm inventory
@@ -111,6 +140,29 @@ docker stop inventory && docker rm inventory
 # Start a fresh container (clean database)
 docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
 ```
+
+## Concurrent Evaluation
+
+Run multiple models in parallel against a **single Docker container**. Each model gets its own isolated SQLite database via OpenEnv's concurrent session support:
+
+```bash
+# Run 3 models simultaneously
+python run_eval.py --gym inventory \
+  --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6 \
+  --parallel 3 \
+  --reward-mode openenv \
+  --save --trajectory
+```
+
+How it works:
+1. `run_eval.py` spawns N worker threads (one per model)
+2. Each worker creates its own `AutoEnv` client → own WebSocket → own `InventoryEnvironment` instance
+3. Each `env.reset()` creates a unique session ID + isolated SQLite DB (`data/sessions/<uuid>.db`)
+4. All HTTP calls from the environment include `X-Session-ID` header → API routes to the correct DB
+5. Ground truth checker queries the session-specific DB, not the default one
+6. Session DBs are automatically deleted when the environment closes
+
+> **No extra Docker containers needed.** One container handles all concurrent sessions. The `--parallel N` flag controls how many models run at once.
 
 ## Available Tools
 
@@ -228,12 +280,19 @@ Each scenario defines:
 
 ## Configuration
 
-Ports and DB path are configured in `config.py`, which reads from `.env` (inside this folder):
+All configuration is in `.env` (inside this folder), read directly via `os.getenv()` — no intermediary config file:
 
 ```env
+# Inventory API
 API_PORT=8000
+DATABASE_URL=sqlite+aiosqlite:///data/app.db
+
+# OpenEnv Server
 OPENENV_PORT=9000
 INVENTORY_API_URL=http://localhost:8000
+
+# Concurrent Sessions
+MAX_CONCURRENT_ENVS=4
 ```
 
 API keys for LLM providers are in the root `.env` file:

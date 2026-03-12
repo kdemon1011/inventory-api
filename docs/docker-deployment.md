@@ -96,12 +96,29 @@ curl http://localhost:9000/health
 # Start the gym
 docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
 
-# Run evaluation
+# Run a single model evaluation
 python run_eval.py --gym inventory --model gpt-4o --save --trajectory
+
+# Run multiple models in parallel (concurrent sessions)
+python run_eval.py --gym inventory \
+  --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6 \
+  --parallel 3 \
+  --save --trajectory
 
 # Stop
 docker stop inventory && docker rm inventory
 ```
+
+### Concurrent Sessions
+
+A single Docker container supports **multiple concurrent evaluations**. When using `--parallel N`:
+
+- Each model gets its own `InventoryEnvironment` instance via a separate WebSocket connection
+- Each instance creates an isolated SQLite database in `data/sessions/<uuid>.db` inside the container
+- All HTTP requests include `X-Session-ID` header for database routing
+- Session databases are automatically cleaned up when the evaluation finishes
+
+No extra containers or port mappings needed — one container handles it all.
 
 ## Dockerfile Structure
 

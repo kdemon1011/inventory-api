@@ -1,7 +1,7 @@
 # Inventory Gym — Docker image for OpenEnv deployment
 #
 # Packages the Inventory API (port 8000) and OpenEnv server (port 9000)
-# into a single container.
+# into a single container. Supports concurrent sessions for parallel evaluation.
 #
 # Build:
 #   openenv build inventory/
@@ -9,6 +9,9 @@
 #
 # Run:
 #   docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
+#
+# Run with more concurrent sessions (default: 4):
+#   docker run -d --name inventory -p 8000:8000 -p 9000:9000 -e MAX_CONCURRENT_ENVS=8 openenv-inventory
 #
 # The LLM agent connects to localhost:9000 (OpenEnv).
 # The ground truth checker connects to localhost:8000 (API).
@@ -72,6 +75,9 @@ EXPOSE 8000 9000
 # Health check against the OpenEnv server
 HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:9000/health || exit 1
+
+# Create data directories (sessions dir for concurrent DB isolation)
+RUN mkdir -p /app/env/data/sessions
 
 # Start Inventory API in background, wait for it, then start OpenEnv server
 CMD ["bash", "-c", "cd /app/env && python main.py & for i in $(seq 1 30); do curl -sf http://localhost:8000/health >/dev/null 2>&1 && echo 'Inventory API ready' && break; sleep 1; done; exec uvicorn server.app:app --host 0.0.0.0 --port 9000"]

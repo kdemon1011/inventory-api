@@ -220,11 +220,45 @@ class AgentRunner:
         # 1. Reset environment
         env.reset()
 
-        # 2. Discover tools from OpenEnv
-        tools = env.list_tools(use_cache=False)
+        # 2. Extract session_id for concurrent DB isolation
+        # OpenEnv strips metadata from reset observations, so we call
+        # get_session_info tool directly to get the session_id.
+        session_id = None
+        try:
+            session_result = env.step(
+                CallToolAction(tool_name="get_session_info", arguments={})
+            )
+            obs = session_result.observation
+            if isinstance(obs, CallToolObservation) and obs.result:
+                result_data = obs.result
+                if hasattr(result_data, "data"):
+                    result_data = result_data.data
+                elif isinstance(result_data, dict) and "data" in result_data:
+                    result_data = result_data["data"]
+                if isinstance(result_data, dict):
+                    session_id = result_data.get("session_id")
+                elif isinstance(result_data, str):
+                    import json as _json
+                    try:
+                        parsed = _json.loads(result_data)
+                        session_id = parsed.get("session_id")
+                    except (ValueError, TypeError):
+                        pass
+        except Exception as e:
+            logger.warning(f"Could not get session_id: {e}")
+
+        # Route the checker to the correct session DB
+        if session_id and hasattr(checker, "set_session"):
+            checker.set_session(session_id)
+            logger.info(f"Session-scoped checker → {session_id}")
+
+        # 3. Discover tools from OpenEnv (exclude infrastructure tools)
+        all_tools = env.list_tools(use_cache=False)
+        # Filter out get_session_info — it's infrastructure, not for the LLM
+        tools = [t for t in all_tools if t.name != "get_session_info"]
         openai_tools = mcp_tools_to_openai(tools)
         tool_names = [t.name for t in tools]
-        logger.info(f"Discovered {len(tools)} tools: {tool_names}")
+        logger.info(f"Discovered {len(tools)} agent tools: {tool_names}")
 
         # 3. Build initial messages
         messages = [
