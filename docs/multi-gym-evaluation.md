@@ -11,18 +11,18 @@ How to run evaluations across multiple gyms with multiple models — from a sing
 │  Docker Containers (one per gym, each on its own ports):                    │
 │                                                                             │
 │  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐  │
-│  │  inventory           │  │  math                │  │  devops              │  │
-│  │  API: 8000           │  │  (no API, in-memory) │  │  API: 8003           │  │
-│  │  OpenEnv: 9000       │  │  OpenEnv: 9002       │  │  OpenEnv: 9003       │  │
+│  │  inventory          │  │  math               │  │  devops             │  │
+│  │  API: 8000          │  │  (no API, in-memory)│  │  API: 8003          │  │
+│  │  OpenEnv: 9000      │  │  OpenEnv: 9002      │  │  OpenEnv: 9003      │  │
 │  └─────────────────────┘  └─────────────────────┘  └─────────────────────┘  │
-│         ▲                         ▲                         ▲                │
-│         │                         │                         │                │
+│         ▲                         ▲                         ▲               │
+│         │                         │                         │               │
 │  ┌──────┴──────┐           ┌──────┴──────┐           ┌──────┴──────┐        │
 │  │ run_eval.py │           │ run_eval.py │           │ run_eval.py │        │
 │  │ --gym inv   │           │ --gym math  │           │ --gym devops│        │
 │  │ --parallel 3│           │ --parallel 2│           │ --parallel 2│        │
 │  └─────────────┘           └─────────────┘           └─────────────┘        │
-│   Terminal 1                Terminal 2                Terminal 3              │
+│   Terminal 1                Terminal 2                Terminal 3            │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
