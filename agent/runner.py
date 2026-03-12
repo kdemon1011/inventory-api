@@ -2,7 +2,7 @@
 Gym-agnostic Agent Runner — connects an LLM to any OpenEnv environment.
 
 This module is the CORE of the evaluation platform. It:
-  1. Connects to an OpenEnv server (any gym)
+  1. Receives a pre-connected OpenEnv client (from AutoEnv discovery)
   2. Discovers tools via list_tools()
   3. Gives the LLM a scenario prompt + available tools
   4. Loops: LLM reasons → agent calls env.step() → observation → LLM reasons again
@@ -11,11 +11,17 @@ This module is the CORE of the evaluation platform. It:
 The runner does NOT know about specific gyms. It only knows OpenEnv.
 The same runner works for inventory, browser, or any future gym.
 
+The environment client is always created externally via AutoEnv:
+    env = AutoEnv.from_env("inventory", base_url="http://localhost:9000")
+and passed to the runner — the runner never manages connections itself.
+
 Each tool call is timestamped and timed so trajectory data can be exported
 for debugging and analysis (see run_eval.py --trajectory).
 
 Usage:
-    runner = AgentRunner(model="gpt-4o", openenv_url="http://localhost:9000")
+    from openenv import AutoEnv
+    env = AutoEnv.from_env("inventory", base_url="http://localhost:9000")
+    runner = AgentRunner(model="gpt-4o", env_client=env)
     episode, breakdown = runner.run_scenario(scenario, checker)
 """
 
@@ -26,7 +32,7 @@ from datetime import datetime, timezone, timedelta
 
 # Indian Standard Time (UTC+5:30)
 IST = timezone(timedelta(hours=5, minutes=30))
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from openenv.core.mcp_client import MCPToolClient
 from openenv.core.env_server.mcp_types import CallToolAction, CallToolObservation, Tool
@@ -125,8 +131,8 @@ class AgentRunner:
     Gym-agnostic agent that connects an LLM to any OpenEnv environment.
 
     The runner:
-      - Connects to OpenEnv (any gym)
-      - Discovers tools dynamically
+      - Receives a pre-connected env client (from AutoEnv discovery)
+      - Discovers tools dynamically via list_tools()
       - Lets the LLM decide which tools to call
       - Routes all actions through OpenEnv (never calls tools directly)
       - Collects logs for reward calculation
@@ -137,7 +143,7 @@ class AgentRunner:
 
     Args:
         model: LiteLLM model string (e.g., "gpt-4o", "ollama/llama3")
-        openenv_url: URL of the OpenEnv server (e.g., "http://localhost:9000")
+        env_client: Pre-connected OpenEnv client (from AutoEnv.from_env())
         temperature: LLM sampling temperature (0.0 = deterministic)
         max_tokens: Max tokens per LLM response
         reward_mode: "custom" or "openenv"
@@ -147,7 +153,7 @@ class AgentRunner:
     def __init__(
         self,
         model: str,
-        openenv_url: str = "http://localhost:9000",
+        env_client: MCPToolClient,
         temperature: float = 0.0,
         max_tokens: int = 1024,
         reward_mode: str = "custom",
@@ -158,7 +164,7 @@ class AgentRunner:
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        self.openenv_url = openenv_url
+        self.env_client = env_client
         self.reward_mode = reward_mode
         self.transform = transform
 
@@ -174,10 +180,13 @@ class AgentRunner:
         self,
         scenario: Scenario,
         checker: Any,
-        env: Optional[MCPToolClient] = None,
     ) -> Tuple[EpisodeLog, RewardBreakdown]:
         """
         Run a single scenario through the LLM agent.
+
+        Uses the pre-connected env_client (from AutoEnv) that was passed
+        to the constructor. The client's lifecycle is managed externally
+        by run_eval.py — the runner only uses it.
 
         Flow:
           1. env.reset()
@@ -194,21 +203,11 @@ class AgentRunner:
         Args:
             scenario: The task definition with prompt, expected tools, outcome checks.
             checker: Gym-specific checker (e.g., InventoryChecker) with check_all().
-            env: Optional pre-connected OpenEnv client. If None, creates one.
 
         Returns:
             (EpisodeLog, RewardBreakdown) — the full record + scored result.
         """
-        own_env = env is None
-        if own_env:
-            env = MCPToolClient(base_url=self.openenv_url)
-            env.__enter__()
-
-        try:
-            return self._execute(scenario, checker, env)
-        finally:
-            if own_env:
-                env.__exit__(None, None, None)
+        return self._execute(scenario, checker, self.env_client)
 
     def _execute(
         self,

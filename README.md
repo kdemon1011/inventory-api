@@ -8,6 +8,9 @@ The LLM **never calls tools directly** — it connects to OpenEnv, discovers ava
 
 ```bash
 pip install -r requirements.txt
+
+# Install each gym for AutoEnv auto-discovery
+pip install -e inventory/
 ```
 
 Add API keys to the root `.env`:
@@ -29,16 +32,21 @@ Each gym has its own README with detailed architecture, running instructions, to
 ## Quick Start
 
 ```bash
-# 1. Start a gym (Docker)
-cd inventory && docker build -t openenv-inventory -f Dockerfile . && cd ..
+# 1. Install the gym for AutoEnv discovery (one-time)
+pip install -e inventory/
+
+# 2. Build and start Docker container
+cd inventory && docker build -t openenv-inventory . && cd ..
 docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
 
-# 2. Run an evaluation
+# 3. Run an evaluation (AutoEnv discovers and connects automatically)
 python run_eval.py --gym inventory --model gpt-4o --save --trajectory
 
-# 3. Stop
+# 4. Stop
 docker stop inventory && docker rm inventory
 ```
+
+All gym connections use **AutoEnv auto-discovery** — no manual URLs needed. `run_eval.py` discovers the gym from its pip-installed package, reads the port from `openenv.yaml`, and connects via `AutoEnv.from_env()`.
 
 ## Documentation
 

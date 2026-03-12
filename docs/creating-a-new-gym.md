@@ -119,14 +119,22 @@ if __name__ == "__main__":
 
 ### Client (`client.py`)
 
-Replace the typed `EnvClient` with `MCPToolClient`:
+Replace the typed `EnvClient` with `MCPToolClient` and add **Action/Observation aliases** for AutoEnv discovery:
 
 ```python
 from openenv.core.mcp_client import MCPToolClient
+from openenv.core.env_server.mcp_types import CallToolAction, CallToolObservation
 
 class MyNewGymEnv(MCPToolClient):
+    """Client for MyNewGym — discoverable via AutoEnv.from_env('my_new_gym')."""
     pass
+
+# Type aliases for AutoEnv / AutoAction auto-discovery
+MyNewGymAction = CallToolAction
+MyNewGymObservation = CallToolObservation
 ```
+
+These aliases are required for `AutoEnv.from_env()` and `AutoAction.from_env()` to work.
 
 ### Clean up
 
@@ -136,9 +144,18 @@ class MyNewGymEnv(MCPToolClient):
 
 ### Update dependencies (`pyproject.toml`)
 
-Add `fastmcp` for the MCP-tool pattern:
+Add `fastmcp` for the MCP-tool pattern and configure the package for pip-installability:
 
 ```toml
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openenv-my-new-gym"
+version = "0.1.0"
+description = "My New Gym — a brief description"
+requires-python = ">=3.10"
 dependencies = [
     "openenv-core[core]>=0.2.0",
     "fastmcp>=0.2.0",
@@ -147,6 +164,18 @@ dependencies = [
     "pydantic>=2.5.0",
     # Add your gym-specific dependencies here
 ]
+
+[project.scripts]
+server = "my_new_gym.server.app:main"
+
+[tool.setuptools]
+include-package-data = true
+packages = ["my_new_gym", "my_new_gym.server"]
+package-dir = {"my_new_gym" = ".", "my_new_gym.server" = "server"}
+
+# IMPORTANT: Include openenv.yaml so AutoEnv can discover the gym
+[tool.setuptools.package-data]
+my_new_gym = ["openenv.yaml"]
 ```
 
 Then regenerate the lock file:
@@ -154,6 +183,24 @@ Then regenerate the lock file:
 ```bash
 cd my_new_gym && uv lock
 ```
+
+### Make it pip-installable (required for AutoEnv)
+
+AutoEnv discovers gyms from pip-installed packages. Install in editable mode:
+
+```bash
+pip install -e my_new_gym/
+```
+
+Verify discovery:
+
+```bash
+python -c "from openenv import AutoEnv; AutoEnv.list_environments()"
+```
+
+You should see your gym listed with its name, description, and version.
+
+> **Why editable mode?** `pip install -e` creates a link to your source code so changes are reflected immediately without reinstalling. This is essential during development.
 
 ### Update port in `openenv.yaml`
 
@@ -199,7 +246,7 @@ curl http://localhost:9000/health
 Create `scenarios/my_new_gym.py`:
 
 ```python
-from scenarios.base import Scenario
+from rewards.base import Scenario
 
 MY_GYM_SCENARIOS = [
     Scenario(
@@ -265,20 +312,23 @@ GYM_REGISTRY = {
         "scenarios_loader": lambda: _load_my_new_gym_scenarios(),
         "checker_factory": lambda api_url: _create_my_new_gym_checker(api_url),
         "transform_factory": lambda: _create_my_new_gym_transform(),
-        "default_openenv_url": "http://localhost:9002",  # unique port per gym
-        "default_api_url": "http://localhost:8002",   # or None if in-memory
+        "default_api_url": "http://localhost:8002",  # or None if in-memory
     },
 }
 ```
+
+`run_eval.py` uses `AutoEnv.from_env(gym_name, base_url=...)` where the base_url is **auto-derived** from the gym's `openenv.yaml` port. No hardcoded OpenEnv URLs needed — only the API URL for ground truth checking (which is NOT an OpenEnv concept).
 
 ## Checklist
 
 - [ ] `openenv init my_new_gym`
 - [ ] Customize environment (Gymnasium-style or MCP-tool)
 - [ ] Update `server/app.py` (add MCPAction union if MCP-tool)
-- [ ] Update `client.py` (MCPToolClient if MCP-tool)
-- [ ] Update `pyproject.toml` dependencies
+- [ ] Update `client.py` (MCPToolClient + Action/Observation aliases for AutoEnv)
+- [ ] Update `pyproject.toml` (dependencies + package-data for `openenv.yaml`)
 - [ ] `uv lock` to regenerate lock file
+- [ ] `pip install -e my_new_gym/` to make it discoverable
+- [ ] Verify: `python -c "from openenv import AutoEnv; AutoEnv.list_environments()"`
 - [ ] `openenv validate my_new_gym/` — must pass
 - [ ] Create scenarios: `scenarios/my_new_gym.py`
 - [ ] Create reward checker: `rewards/my_new_gym_checks.py`

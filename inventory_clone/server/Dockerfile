@@ -7,7 +7,7 @@
 #         (from inventory_clone/ directory)
 #   OR:   openenv build inventory_clone/
 #
-# Run:    docker run -p 9000:9000 openenv-inventory-clone
+# Run:    docker run -p 9001:9001 openenv-inventory-clone
 
 ARG BASE_IMAGE=ghcr.io/meta-pytorch/openenv-base:latest
 FROM ${BASE_IMAGE} AS builder

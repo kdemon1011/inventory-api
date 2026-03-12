@@ -70,7 +70,7 @@ This single line creates:
 
 ### MCPToolClient
 
-The client the agent uses to connect:
+The low-level client for connecting to OpenEnv servers. In practice you don't instantiate this directly — **AutoEnv handles it** (see below).
 
 ```python
 from openenv.core.mcp_client import MCPToolClient
@@ -80,6 +80,34 @@ env.reset()
 tools = env.list_tools()           # discover available tools
 result = env.call_tool("do_something", param="value")
 ```
+
+### AutoEnv (Auto-Discovery)
+
+`AutoEnv` is OpenEnv's auto-discovery system. Instead of manually importing client classes and specifying URLs, you just:
+
+```python
+from openenv import AutoEnv
+
+# Discover and connect in one call
+env = AutoEnv.from_env("inventory", base_url="http://localhost:9000")
+env.reset()
+tools = env.list_tools()
+```
+
+AutoEnv works by scanning pip-installed `openenv-*` packages. When you `pip install -e inventory/`, AutoEnv can find the gym's `openenv.yaml` manifest and `client.py` module, then:
+1. Imports `InventoryEnv` from `inventory.client`
+2. Creates an instance with the given `base_url`
+3. Returns a fully typed client (with `InventoryAction` and `InventoryObservation` aliases)
+
+To make a gym discoverable by AutoEnv:
+1. It must be pip-installable (`pyproject.toml` with proper package config)
+2. It must include `openenv.yaml` in its package data
+3. `client.py` must export `<Name>Env`, `<Name>Action`, `<Name>Observation`
+
+Related discovery helpers:
+- `AutoEnv.list_environments()` — list all discovered gyms
+- `AutoEnv.get_env_info(name)` — get metadata for a specific gym
+- `AutoAction.from_env(name)` — get the Action type for a gym
 
 ### Action Types
 
@@ -211,8 +239,9 @@ The default template uses the Gymnasium-style pattern. For MCP-tool-style, you c
 
 The evaluation flow:
 
-1. **Start the gym** — Docker or local (`uv run server`)
-2. **Run `run_eval.py`** — connects `AgentRunner` to the OpenEnv server
-3. **For each scenario**: Agent resets env → discovers tools → reasons with LLM → calls tools → gets observations → repeat until max steps
-4. **Score**: Ground truth checked against real database; per-step or episode-level reward calculated
-5. **Save**: Results to markdown, trajectories to JSON
+1. **Install the gym** — `pip install -e inventory/` (one-time, enables AutoEnv discovery)
+2. **Start Docker** — `docker run -d -p 8000:8000 -p 9000:9000 openenv-inventory`
+3. **Run `run_eval.py`** — AutoEnv discovers the gym, auto-derives port from `openenv.yaml`, connects `AgentRunner` via `AutoEnv.from_env()`
+4. **For each scenario**: Agent resets env → discovers tools → reasons with LLM → calls tools → gets observations → repeat until max steps
+5. **Score**: Ground truth checked against real database; per-step or episode-level reward calculated
+6. **Save**: Results to markdown, trajectories to JSON
