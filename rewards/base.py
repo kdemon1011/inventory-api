@@ -104,11 +104,18 @@ class RewardBreakdown:
     details: Dict[str, Any] = field(default_factory=dict)
 
     def summary(self) -> str:
-        lines = [
-            f"  Structural:   {self.structural:.2f}  (weight 0.25)",
-            f"  Ground Truth: {self.ground_truth:.2f}  (weight 0.60)",
-            f"  Efficiency:   {self.efficiency:.2f}  (weight 0.15)",
-        ]
+        mode = self.details.get("reward_mode", "custom")
+        if mode == "openenv":
+            lines = [
+                f"  Step Rewards: {self.structural:.2f}  (weight 0.40, from transform)",
+                f"  Ground Truth: {self.ground_truth:.2f}  (weight 0.60)",
+            ]
+        else:
+            lines = [
+                f"  Structural:   {self.structural:.2f}  (weight 0.25)",
+                f"  Ground Truth: {self.ground_truth:.2f}  (weight 0.60)",
+                f"  Efficiency:   {self.efficiency:.2f}  (weight 0.15)",
+            ]
         if self.penalty < 0:
             lines.append(f"  Penalty:      {self.penalty:.2f}  (hallucination)")
         lines.append(f"  ────────────────────────")

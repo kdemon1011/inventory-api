@@ -34,8 +34,11 @@ import os
 import sys
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List
+
+# Indian Standard Time (UTC+5:30)
+IST = timezone(timedelta(hours=5, minutes=30))
 
 from dotenv import load_dotenv
 
@@ -59,6 +62,7 @@ GYM_REGISTRY = {
     "inventory": {
         "scenarios_loader": lambda: _load_inventory_scenarios(),
         "checker_factory": lambda api_url: _create_inventory_checker(api_url),
+        "transform_factory": lambda: _create_inventory_transform(),
         "default_openenv_url": "http://localhost:9000",
         "default_api_url": "http://localhost:8000",
     },
@@ -66,6 +70,7 @@ GYM_REGISTRY = {
     # "browser": {
     #     "scenarios_loader": lambda: _load_browser_scenarios(),
     #     "checker_factory": lambda api_url: _create_browser_checker(api_url),
+    #     "transform_factory": lambda: _create_browser_transform(),
     #     "default_openenv_url": "http://localhost:9001",
     #     "default_api_url": "http://localhost:8001",
     # },
@@ -80,6 +85,11 @@ def _load_inventory_scenarios():
 def _create_inventory_checker(api_url):
     from rewards.inventory_checks import InventoryChecker
     return InventoryChecker(api_url=api_url)
+
+
+def _create_inventory_transform():
+    from rewards.transforms.inventory import InventoryStepTransform
+    return InventoryStepTransform()
 
 
 def divider(text: str = ""):
@@ -104,6 +114,7 @@ def save_results_to_markdown(
     total_elapsed: float,
     temperature: float,
     run_id: str = "",
+    reward_mode: str = "custom",
 ):
     """
     Append (or create) a markdown results file for this evaluation run.
@@ -114,7 +125,7 @@ def save_results_to_markdown(
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S")
     is_new_file = not os.path.exists(output_path)
 
     with open(output_path, "a") as f:
@@ -122,12 +133,21 @@ def save_results_to_markdown(
             f.write(f"# {gym.title()} Gym — Evaluation Results\n\n")
             f.write(f"**Run ID**: `{run_id}`\n\n")
             f.write(f"Evaluation results for the **{gym}** gym across different LLM models.\n\n")
-            f.write(f"Each model is evaluated on the same set of scenarios. ")
-            f.write(f"Rewards are computed by `rewards/base.py` using:\n")
-            f.write(f"- **Structural** (0.25) — right tools called, no errors\n")
-            f.write(f"- **Ground Truth** (0.60) — database state matches expected outcome\n")
-            f.write(f"- **Efficiency** (0.15) — solved in reasonable steps\n")
-            f.write(f"- **Hallucination Penalty** (-1.0) — tools say success but DB disagrees\n\n")
+            if reward_mode == "openenv":
+                f.write(f"**Reward Mode**: `openenv` — per-step rewards from `rewards/transforms/` + ground truth\n\n")
+                f.write(f"Each model is evaluated on the same set of scenarios. ")
+                f.write(f"Rewards are computed using OpenEnv transforms:\n")
+                f.write(f"- **Step Rewards** (0.40) — per-step success/failure from transform\n")
+                f.write(f"- **Ground Truth** (0.60) — database state matches expected outcome\n")
+                f.write(f"- **Hallucination Penalty** (-1.0) — tools say success but DB disagrees\n\n")
+            else:
+                f.write(f"**Reward Mode**: `custom` — episode-level rewards from `rewards/base.py`\n\n")
+                f.write(f"Each model is evaluated on the same set of scenarios. ")
+                f.write(f"Rewards are computed by `rewards/base.py` using:\n")
+                f.write(f"- **Structural** (0.25) — right tools called, no errors\n")
+                f.write(f"- **Ground Truth** (0.60) — database state matches expected outcome\n")
+                f.write(f"- **Efficiency** (0.15) — solved in reasonable steps\n")
+                f.write(f"- **Hallucination Penalty** (-1.0) — tools say success but DB disagrees\n\n")
             f.write(f"Trajectories: `trajectories/{gym}/{run_id}/`\n\n")
             f.write(f"---\n\n")
 
@@ -135,27 +155,43 @@ def save_results_to_markdown(
         f.write(f"## Model: `{model}`\n\n")
         f.write(f"- **Date**: {timestamp}\n")
         f.write(f"- **Temperature**: {temperature}\n")
+        f.write(f"- **Reward Mode**: {reward_mode}\n")
         f.write(f"- **Total Time**: {total_elapsed:.1f}s\n")
         f.write(f"- **Trajectory**: `trajectories/{gym}/{run_id}/{safe_model}.json`\n\n")
 
-        # Results table
-        f.write(f"| Scenario | Structural | Ground Truth | Efficiency | Penalty | **Total** | Steps | Time |\n")
-        f.write(f"|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
+        # Results table — headers differ by reward mode
+        if reward_mode == "openenv":
+            f.write(f"| Scenario | Step Rewards | Ground Truth | Penalty | **Total** | Steps | Time |\n")
+            f.write(f"|---|:---:|:---:|:---:|:---:|:---:|:---:|\n")
+        else:
+            f.write(f"| Scenario | Structural | Ground Truth | Efficiency | Penalty | **Total** | Steps | Time |\n")
+            f.write(f"|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n")
 
         total_reward = 0.0
         for r in results:
             bd = r.get("breakdown")
             if bd:
-                f.write(
-                    f"| {r['scenario']} "
-                    f"| {bd.structural:.2f} "
-                    f"| {bd.ground_truth:.2f} "
-                    f"| {bd.efficiency:.2f} "
-                    f"| {bd.penalty:.2f} "
-                    f"| **{bd.total:.2f}** "
-                    f"| {r['steps']} "
-                    f"| {r['elapsed']:.1f}s |\n"
-                )
+                if reward_mode == "openenv":
+                    f.write(
+                        f"| {r['scenario']} "
+                        f"| {bd.structural:.2f} "
+                        f"| {bd.ground_truth:.2f} "
+                        f"| {bd.penalty:.2f} "
+                        f"| **{bd.total:.2f}** "
+                        f"| {r['steps']} "
+                        f"| {r['elapsed']:.1f}s |\n"
+                    )
+                else:
+                    f.write(
+                        f"| {r['scenario']} "
+                        f"| {bd.structural:.2f} "
+                        f"| {bd.ground_truth:.2f} "
+                        f"| {bd.efficiency:.2f} "
+                        f"| {bd.penalty:.2f} "
+                        f"| **{bd.total:.2f}** "
+                        f"| {r['steps']} "
+                        f"| {r['elapsed']:.1f}s |\n"
+                    )
                 total_reward += bd.total
             else:
                 f.write(
@@ -181,6 +217,7 @@ def save_trajectory(
     temperature: float,
     total_elapsed: float,
     run_id: str = "",
+    reward_mode: str = "custom",
 ):
     """
     Save a detailed trajectory JSON for this model run.
@@ -189,11 +226,11 @@ def save_trajectory(
         trajectories/<gym>/<run_id>/<model_name>.json
 
     The JSON contains:
-      - run metadata (run_id, model, gym, timestamp, temperature)
+      - run metadata (run_id, model, gym, timestamp, temperature, reward_mode)
       - per-scenario trajectories with step-by-step tool calls,
         arguments, results, timestamps, and reward breakdown.
     """
-    run_ts = datetime.now(timezone.utc).isoformat()
+    run_ts = datetime.now(IST).isoformat()
 
     # Sanitize model name for filename (e.g. "ollama/llama3" → "ollama_llama3")
     safe_model = model.replace("/", "_").replace(":", "_")
@@ -209,6 +246,7 @@ def save_trajectory(
         "gym": gym,
         "timestamp": run_ts,
         "temperature": temperature,
+        "reward_mode": reward_mode,
         "total_elapsed_s": round(total_elapsed, 2),
         "total_scenarios": len(results),
         "scenarios": [],
@@ -297,6 +335,7 @@ def main():
         epilog="""
 Examples:
   python run_eval.py --gym inventory --model gpt-4o
+  python run_eval.py --gym inventory --model gpt-4o --reward-mode openenv
   python run_eval.py --gym inventory --model claude-sonnet-4-6
   python run_eval.py --gym inventory --model ollama/llama3
   python run_eval.py --gym inventory --model gpt-4o --scenario create_product
@@ -361,6 +400,13 @@ Examples:
              "(default: auto-generated as run_YYYYMMDD_HHMM)",
     )
     parser.add_argument(
+        "--reward-mode",
+        default="custom",
+        choices=["custom", "openenv"],
+        help="Reward mode: 'custom' (episode-level from rewards/base.py) "
+             "or 'openenv' (per-step from rewards/transforms/). Default: custom",
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable debug logging",
@@ -372,7 +418,7 @@ Examples:
     if args.run_id:
         run_id = args.run_id
     else:
-        run_id = f"run_{datetime.now().strftime('%Y%m%d_%H%M')}"
+        run_id = f"run_{datetime.now(IST).strftime('%Y%m%d_%H%M')}"
 
     # Setup logging
     log_level = logging.DEBUG if args.verbose else logging.INFO
@@ -407,6 +453,12 @@ Examples:
     print(f"  API URL:      {api_url}")
     print(f"  Scenarios:    {len(scenarios)} of {len(all_scenarios)}")
     print(f"  Temperature:  {args.temperature}")
+    print(f"  Reward Mode:  {args.reward_mode}")
+
+    # Create gym-specific transform (only needed for openenv reward mode)
+    transform = None
+    if args.reward_mode == "openenv":
+        transform = gym_config["transform_factory"]()
 
     # Create agent runner
     runner = AgentRunner(
@@ -414,6 +466,8 @@ Examples:
         openenv_url=openenv_url,
         temperature=args.temperature,
         max_tokens=args.max_tokens,
+        reward_mode=args.reward_mode,
+        transform=transform,
     )
 
     # Create gym-specific checker
@@ -520,6 +574,7 @@ Examples:
             total_elapsed=total_elapsed,
             temperature=args.temperature,
             run_id=run_id,
+            reward_mode=args.reward_mode,
         )
         print(f"\n  Results saved: {output_path}")
 
@@ -533,6 +588,7 @@ Examples:
             temperature=args.temperature,
             total_elapsed=total_elapsed,
             run_id=run_id,
+            reward_mode=args.reward_mode,
         )
 
 
