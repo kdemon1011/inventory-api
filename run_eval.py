@@ -194,13 +194,22 @@ def save_results_to_markdown(
                     )
                 total_reward += bd.total
             else:
-                f.write(
-                    f"| {r['scenario']} "
-                    f"| — | — | — | — "
-                    f"| **ERROR** "
-                    f"| {r['steps']} "
-                    f"| {r['elapsed']:.1f}s |\n"
-                )
+                if reward_mode == "openenv":
+                    f.write(
+                        f"| {r['scenario']} "
+                        f"| — | — | — "
+                        f"| **ERROR** "
+                        f"| {r['steps']} "
+                        f"| {r['elapsed']:.1f}s |\n"
+                    )
+                else:
+                    f.write(
+                        f"| {r['scenario']} "
+                        f"| — | — | — | — "
+                        f"| **ERROR** "
+                        f"| {r['steps']} "
+                        f"| {r['elapsed']:.1f}s |\n"
+                    )
 
         avg = total_reward / len(results) if results else 0.0
         f.write(f"\n**Average Reward: {avg:.2f}**\n\n")
