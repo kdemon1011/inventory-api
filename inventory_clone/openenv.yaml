@@ -1,0 +1,9 @@
+# OpenEnv Environment Manifest
+# Tells OpenEnv how to find and run this environment.
+
+spec_version: 1
+name: inventory_clone_env
+type: space
+runtime: fastapi
+app: server.app:app
+port: 9001
