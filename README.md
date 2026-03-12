@@ -63,3 +63,4 @@ Parallel mode (`--parallel N`) runs multiple models simultaneously against a **s
 | [Reward System](docs/reward-system.md) | Custom vs OpenEnv reward modes — formulas, comparison, and how to add rewards for a new gym |
 | [Creating a New Gym](docs/creating-a-new-gym.md) | `openenv init` scaffolding, customization, and full registration checklist |
 | [Docker Deployment](docs/docker-deployment.md) | Building and running gyms as Docker containers |
+| [Multi-Gym Evaluation](docs/multi-gym-evaluation.md) | Running evaluations across multiple gyms with parallel models — full setup, commands, and output structure |
