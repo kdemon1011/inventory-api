@@ -29,3 +29,7 @@ server = "inventory.server.app:main"
 include-package-data = true
 packages = ["inventory", "inventory.server"]
 package-dir = {"inventory" = ".", "inventory.server" = "server"}
+
+[tool.setuptools.package-data]
+# Include openenv.yaml so AutoEnv discovery can find it via importlib.resources
+inventory = ["openenv.yaml"]

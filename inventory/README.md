@@ -33,7 +33,7 @@ The LLM **never calls the Inventory API directly**. All interactions go through 
 | `server/inventory_environment.py` | 10 MCP tools (CRUD products + orders) | `MCPEnvironment` |
 | `server/app.py` | Auto-generated server (HTTP + WebSocket) | `create_app()` |
 | `Dockerfile` | Docker image (API + OpenEnv in one container) | — |
-| `client.py` | WebSocket client for manual tests | `MCPToolClient` |
+| `client.py` | Client + AutoEnv type aliases | `MCPToolClient` |
 | `openenv.yaml` | Environment manifest | — |
 | `pyproject.toml` | Package config (validate / build / uv run) | — |
 | `config.py` | Centralized config (ports, DB path) | — |
@@ -42,52 +42,44 @@ The LLM **never calls the Inventory API directly**. All interactions go through 
 
 ## Running the Gym
 
-### Option A: Docker (preferred)
-
-Docker packages both the Inventory API and OpenEnv server into a single container. No local setup required — just build and run.
+### Step 0: Install for AutoEnv discovery (one-time)
 
 ```bash
-# 1. Build the image (from repo root)
-openenv build inventory/
-# OR: cd inventory && docker build -t openenv-inventory .
+# From the repo root
+pip install -e inventory/
+```
+
+This makes the gym discoverable by AutoEnv. Verify:
+```bash
+python -c "from openenv import AutoEnv; AutoEnv.list_environments()"
+```
+
+### Start the Gym (Docker)
+
+Docker packages both the Inventory API and OpenEnv server into a single container:
+
+```bash
+# 1. Build the image (one-time, from this directory)
+docker build -t openenv-inventory .
 
 # 2. Run the container
-#    Port 9000 = OpenEnv server (agent connects here)
+#    Port 9000 = OpenEnv server (AutoEnv connects here automatically)
 #    Port 8000 = Inventory API (ground truth checker connects here)
 docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
 
-# 3. Verify it's running
-curl http://localhost:9000/health
-curl http://localhost:8000/health
+# 3. Verify both servers are ready
+curl http://localhost:9000/health    # → {"status": "healthy"}
+curl http://localhost:8000/products  # → [...]
 
-# 4. Run an evaluation (from repo root)
+# 4. Run an evaluation (AutoEnv discovers and connects automatically)
+cd ..  # repo root
 python run_eval.py --gym inventory --model gpt-4o --save --trajectory
 
 # 5. Stop and remove when done
 docker stop inventory && docker rm inventory
 ```
 
-### Option B: `uv run server` (local development)
-
-For local development and debugging, run the API and OpenEnv server as separate processes.
-
-```bash
-# From this directory (inventory/)
-
-# Terminal 1 — Start the Inventory API on port 8000
-python main.py
-
-# Terminal 2 — Start the OpenEnv server on port 9000
-uv run server
-```
-
-> `uv run server` creates an isolated `.venv` inside this folder on first run (may take a minute). Subsequent runs are instant. It reads the entry point from `pyproject.toml`.
-
-Then from the repo root:
-
-```bash
-python run_eval.py --gym inventory --model gpt-4o --save --trajectory
-```
+> **No manual servers required.** Docker runs both the Inventory API (port 8000) and the OpenEnv server (port 9000) inside a single container. `run_eval.py` uses AutoEnv to auto-discover the gym and auto-derive the port from `openenv.yaml`.
 
 ### Validate
 
@@ -110,16 +102,14 @@ Expected output:
 
 ## Resetting Between Runs
 
-Each model evaluation should start with a clean database:
+Each model evaluation should start with a clean database. With Docker, simply stop and restart the container:
 
 ```bash
-# Kill any running servers
-lsof -ti :8000 -ti :9000 | xargs kill -9 2>/dev/null
+# Stop and remove the current container
+docker stop inventory && docker rm inventory
 
-# Delete the database
-rm -f inventory/data/app.db
-
-# Restart servers (Option A or B above)
+# Start a fresh container (clean database)
+docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
 ```
 
 ## Available Tools

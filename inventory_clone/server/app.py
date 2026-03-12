@@ -12,7 +12,7 @@ Uses OpenEnv's create_app() to auto-generate ALL server routes:
 
 Usage (from the inventory_clone/ folder):
     Local:  uv run server
-    Docker: docker run -p 9000:9000 openenv-inventory-clone
+    Docker: docker run -p 9001:9001 openenv-inventory-clone
 """
 
 import sys
@@ -66,7 +66,7 @@ def main(host: str = "0.0.0.0", port: int = 9001):
     """
     Entry point for: uv run --project . server
 
-    Starts the OpenEnv server on port 9000.
+    Starts the OpenEnv server on port 9001.
     """
     import uvicorn
 

@@ -1,8 +1,10 @@
 # OpenEnv Environment Manifest
 # Tells OpenEnv how to find and run this environment.
+# AutoEnv discovery reads this file to auto-connect clients.
 
 spec_version: 1
 name: inventory_env
+description: "Inventory Management environment — CRUD products, orders, and stock via MCP tools"
 type: space
 runtime: fastapi
 app: server.app:app

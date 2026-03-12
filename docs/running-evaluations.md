@@ -10,14 +10,20 @@
    ANTHROPIC_API_KEY=sk-ant-...
    ```
 
-2. **Gym running** — either via Docker or locally. See the gym's own README for how to start it:
-   - [`inventory/README.md`](../inventory/README.md)
-   - [`inventory_clone/README.md`](../inventory_clone/README.md)
-
-3. **Dependencies installed**:
+2. **Dependencies installed**:
    ```bash
    pip install -r requirements.txt
    ```
+
+3. **Gym installed for AutoEnv discovery** (one-time per gym):
+   ```bash
+   pip install -e inventory/
+   ```
+   Verify: `python -c "from openenv import AutoEnv; AutoEnv.list_environments()"`
+
+4. **Gym running via Docker**. See the gym's own README:
+   - [`inventory/README.md`](../inventory/README.md)
+   - [`inventory_clone/README.md`](../inventory_clone/README.md)
 
 ## Basic Usage
 
@@ -48,7 +54,6 @@ python run_eval.py --gym inventory --model claude-sonnet-4-6 --save --trajectory
 | `--gym` | required | Which gym to evaluate (`inventory`, `inventory_clone`, etc.) |
 | `--model` | `gpt-4o` | LiteLLM model string |
 | `--scenario` | all | Run a specific scenario by ID |
-| `--openenv-url` | from gym config | OpenEnv server URL |
 | `--api-url` | from gym config | API URL for ground truth checks |
 | `--temperature` | `0.0` | LLM sampling temperature |
 | `--max-tokens` | `1024` | Max tokens per LLM response |
@@ -57,6 +62,8 @@ python run_eval.py --gym inventory --model claude-sonnet-4-6 --save --trajectory
 | `--run-id` | auto | Run ID for grouping results + trajectories |
 | `--reward-mode` | `custom` | `custom` (episode-level) or `openenv` (per-step transform) |
 | `-v` | off | Verbose/debug logging |
+
+> **No `--openenv-url` flag.** Connection is handled by AutoEnv — the base URL comes from the gym's registry config (derived from `openenv.yaml` port).
 
 ## What Happens During an Evaluation
 
@@ -127,10 +134,14 @@ GYM_REGISTRY = {
         "scenarios_loader": ...,     # what to test
         "checker_factory": ...,      # how to verify ground truth
         "transform_factory": ...,    # per-step reward transform
-        "default_openenv_url": ...,  # where the gym is running
-        "default_api_url": ...,      # where the backend API is
+        "default_api_url": ...,      # where the backend API is (for ground truth checker)
     },
 }
 ```
+
+Connection is fully via AutoEnv:
+- `base_url` is auto-derived from the gym's `openenv.yaml` port (e.g., `port: 9000` → `http://localhost:9000`)
+- The gym must be pip-installed for discovery: `pip install -e inventory/`
+- No manual URLs needed in the registry for the OpenEnv server
 
 To add a new gym, add an entry here. See [creating-a-new-gym.md](creating-a-new-gym.md) for the full process.

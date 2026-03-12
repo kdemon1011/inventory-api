@@ -131,23 +131,6 @@ CMD [...]
 - **PYTHONPATH**: Set to `/app/env` so imports work correctly from the gym root
 - **Health check**: Container reports healthy when the OpenEnv server responds
 
-## Running Without Docker (Alternative)
+## Note on Local Development
 
-If Docker is not available, you can run gyms locally:
-
-```bash
-# For two-process gyms (e.g., inventory)
-# Terminal 1: Start the backend API
-cd inventory && python main.py
-
-# Terminal 2: Start the OpenEnv server
-cd inventory && uv run server
-
-# For single-process gyms (e.g., inventory_clone)
-cd inventory_clone && uv run server
-```
-
-Then evaluate normally:
-```bash
-python run_eval.py --gym inventory --model gpt-4o
-```
+Docker is the only supported execution method. All gyms are designed to run as Docker containers — this ensures isolation, reproducibility, and a clean database on each restart. Manual server starts (`python main.py`, `uv run server`) are not recommended and are not tested as part of the evaluation pipeline.

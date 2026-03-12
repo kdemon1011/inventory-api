@@ -3,11 +3,14 @@
 Evaluation Runner — run an LLM agent against any gym's scenarios.
 
 This is the main CLI entry point for evaluating LLM models. It:
-  1. Connects an LLM (local or online) to an OpenEnv gym
+  1. Discovers & connects to any gym via AutoEnv (auto-discovery)
   2. Runs each scenario: LLM reasons → OpenEnv executes → reward scored
   3. Prints per-scenario and aggregate results
   4. Optionally saves results to results/<gym>/<run_id>.md (--save)
   5. Optionally saves detailed trajectory JSON to trajectories/<gym>/<run_id>/<model>.json (--trajectory)
+
+Connection is handled entirely by AutoEnv — no manual URLs required.
+AutoEnv discovers the gym from pip-installed packages (pip install -e inventory/).
 
 Each evaluation run is grouped under a run ID (auto-generated timestamp or provided via --run-id).
 This allows multiple runs to coexist for comparison:
@@ -16,15 +19,16 @@ This allows multiple runs to coexist for comparison:
 
 The LLM never calls tools directly — everything goes through OpenEnv.
 
+Prerequisites:
+    1. Install the gym:  pip install -e inventory/
+    2. Start the gym:    docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
+    3. Run evaluation:   python run_eval.py --gym inventory --model gpt-4o
+
 Usage:
     python run_eval.py --gym inventory --model gpt-4o
     python run_eval.py --gym inventory --model gpt-4o --save --trajectory
     python run_eval.py --gym inventory --model gpt-4o --save --trajectory --run-id run_20260311_1830
     python run_eval.py --gym inventory --model gpt-5.4 --temperature 1.0 --save --trajectory
-
-Before running (pick one):
-    Docker:   openenv build inventory/ && docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
-    Local:    cd inventory && python main.py  (Terminal 1)  &&  cd inventory && uv run server  (Terminal 2)
 """
 
 import argparse
@@ -33,7 +37,6 @@ import logging
 import os
 import sys
 import time
-import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List
 
@@ -48,6 +51,8 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # Add repo root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from openenv import AutoEnv
+
 from agent.runner import AgentRunner
 from rewards.base import RewardBreakdown
 
@@ -56,33 +61,56 @@ logger = logging.getLogger(__name__)
 
 # ── Gym Registry ──
 # Maps gym names to their configurations.
-# To add a new gym: add an entry here with its scenarios, checker, and defaults.
+# To add a new gym: pip install -e <gym>/ and add an entry here.
+#
+# Connection is fully via AutoEnv — base_url is auto-derived from openenv.yaml port.
+# The only gym-specific config left is the API URL for ground truth checking
+# (NOT an OpenEnv concept — it's our evaluation infrastructure).
 
 GYM_REGISTRY = {
     "inventory": {
         "scenarios_loader": lambda: _load_inventory_scenarios(),
         "checker_factory": lambda api_url: _create_inventory_checker(api_url),
         "transform_factory": lambda: _create_inventory_transform(),
-        "default_openenv_url": "http://localhost:9000",
-        "default_api_url": "http://localhost:8000",
+        "default_api_url": "http://localhost:8000",   # for ground truth checker (not OpenEnv)
     },
     # ── Demo gym: scaffolded via `openenv init inventory_clone` ──
     "inventory_clone": {
         "scenarios_loader": lambda: _load_inventory_scenarios(),   # reuses inventory scenarios
         "checker_factory": lambda api_url: _create_inventory_clone_checker(),
         "transform_factory": lambda: _create_inventory_transform(),  # reuses inventory transform
-        "default_openenv_url": "http://localhost:9001",  # different port from inventory (9000)
-        "default_api_url": None,  # in-memory — no separate API
+        "default_api_url": None,                       # in-memory — no separate API
     },
     # Future gyms (each gets its own OpenEnv port):
     # "browser": {
     #     "scenarios_loader": lambda: _load_browser_scenarios(),
     #     "checker_factory": lambda api_url: _create_browser_checker(api_url),
     #     "transform_factory": lambda: _create_browser_transform(),
-    #     "default_openenv_url": "http://localhost:9002",
     #     "default_api_url": "http://localhost:8002",
     # },
 }
+
+
+def _resolve_base_url(gym_name: str) -> str:
+    """
+    Derive the OpenEnv server base_url from the installed gym's openenv.yaml port.
+
+    AutoEnv knows the gym package → we read openenv.yaml from it → extract port.
+    No hardcoded URLs needed in GYM_REGISTRY.
+    """
+    import importlib.resources
+    import yaml
+
+    try:
+        ref = importlib.resources.files(gym_name).joinpath("openenv.yaml")
+        with importlib.resources.as_file(ref) as f:
+            manifest = yaml.safe_load(f.read_text())
+            port = manifest.get("port", 9000)
+            return f"http://localhost:{port}"
+    except Exception:
+        # Fallback: default OpenEnv port
+        logger.warning(f"Could not read openenv.yaml for '{gym_name}', defaulting to port 9000")
+        return "http://localhost:9000"
 
 
 def _load_inventory_scenarios():
@@ -369,14 +397,14 @@ def main():
         description="Evaluate an LLM agent against OpenEnv gym scenarios.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+Prerequisites:
+  pip install -e inventory/          # install gym for AutoEnv discovery
+
 Examples:
   python run_eval.py --gym inventory --model gpt-4o
   python run_eval.py --gym inventory --model gpt-4o --reward-mode openenv
   python run_eval.py --gym inventory --model claude-sonnet-4-6
-  python run_eval.py --gym inventory --model ollama/llama3
   python run_eval.py --gym inventory --model gpt-4o --scenario create_product
-  python run_eval.py --gym inventory --model gpt-4o --save
-  python run_eval.py --gym inventory --model gpt-4o --trajectory
   python run_eval.py --gym inventory --model gpt-4o --save --trajectory
   python run_eval.py --gym inventory --model gpt-5.4 --temperature 1.0 --save --trajectory
         """,
@@ -396,11 +424,6 @@ Examples:
         "--scenario",
         default=None,
         help="Run a specific scenario by ID (default: run all)",
-    )
-    parser.add_argument(
-        "--openenv-url",
-        default=None,
-        help="OpenEnv server URL (default: from gym config)",
     )
     parser.add_argument(
         "--api-url",
@@ -466,7 +489,7 @@ Examples:
 
     # Load gym config
     gym_config = GYM_REGISTRY[args.gym]
-    openenv_url = args.openenv_url or gym_config["default_openenv_url"]
+    base_url = _resolve_base_url(args.gym)  # auto-derived from openenv.yaml port
     api_url = args.api_url or gym_config["default_api_url"]
 
     # Load scenarios
@@ -480,12 +503,25 @@ Examples:
     else:
         scenarios = all_scenarios
 
+    # Discover and connect to gym via AutoEnv
+    divider("AutoEnv Discovery")
+    print(f"  Discovering gym '{args.gym}' via AutoEnv...")
+    env_info = AutoEnv.get_env_info(args.gym)
+    print(f"  Found: {env_info['name']} (package: {env_info['package']}, v{env_info['version']})")
+    print(f"  Client class: {env_info['env_class']} from {env_info['module']}")
+    print(f"  Base URL: {base_url} (auto-derived from openenv.yaml port)")
+
+    env_client = AutoEnv.from_env(args.gym, base_url=base_url)
+    env_client.__enter__()
+    print(f"  Connected to {args.gym} OpenEnv server.")
+
     # Print header
     divider("LLM Evaluation Run")
     print(f"  Gym:          {args.gym}")
     print(f"  Model:        {args.model}")
     print(f"  Run ID:       {run_id}")
-    print(f"  OpenEnv URL:  {openenv_url}")
+    print(f"  Discovery:    AutoEnv ({env_info['package']})")
+    print(f"  Base URL:     {base_url}")
     print(f"  API URL:      {api_url}")
     print(f"  Scenarios:    {len(scenarios)} of {len(all_scenarios)}")
     print(f"  Temperature:  {args.temperature}")
@@ -496,10 +532,10 @@ Examples:
     if args.reward_mode == "openenv":
         transform = gym_config["transform_factory"]()
 
-    # Create agent runner
+    # Create agent runner — uses AutoEnv-discovered client
     runner = AgentRunner(
         model=args.model,
-        openenv_url=openenv_url,
+        env_client=env_client,
         temperature=args.temperature,
         max_tokens=args.max_tokens,
         reward_mode=args.reward_mode,
@@ -571,9 +607,11 @@ Examples:
                 })
 
     finally:
-        # Clean up checker
+        # Clean up
         if hasattr(checker, "close"):
             checker.close()
+        env_client.__exit__(None, None, None)
+        logger.info("AutoEnv client disconnected.")
 
     # Print summary
     total_elapsed = time.time() - total_start

@@ -28,7 +28,7 @@ The agent is **gym-agnostic** — it works with any gym without modification.
 | `agent/llm.py` | LiteLLM wrapper — unified interface for GPT, Claude, Ollama, Gemini, etc. |
 | `agent/runner.py` | Agent loop: resets env → LLM reasons → sends tool calls → observes → repeat |
 
-The `AgentRunner` connects to any OpenEnv server via `MCPToolClient`. It doesn't know what gym it's talking to — it just discovers tools and calls them based on LLM reasoning.
+The `AgentRunner` receives a pre-connected client (from AutoEnv discovery) and uses it to interact with any OpenEnv server. It doesn't know what gym it's talking to — it just discovers tools and calls them based on LLM reasoning.
 
 ## Gyms (`inventory/`, `inventory_clone/`, etc.)
 
@@ -51,7 +51,7 @@ inventory/
 ├── server/                    ← OpenEnv layer
 │   ├── app.py                 ← create_app() with MCPAction union
 │   └── inventory_environment.py ← MCPEnvironment with 10 tools (calls the real API)
-├── client.py                  ← MCPToolClient wrapper
+├── client.py                  ← MCPToolClient + AutoEnv type aliases
 ├── Dockerfile                 ← Docker image (runs both API + OpenEnv server)
 ├── pyproject.toml             ← Dependencies + entry point
 ├── openenv.yaml               ← OpenEnv manifest
@@ -87,7 +87,7 @@ inventory_clone/
 
 Architecture: single process, no separate API:
 ```
-Port 9000: OpenEnv Server (MCPEnvironment with in-memory data)
+Port 9001: OpenEnv Server (MCPEnvironment with in-memory data)
 ```
 
 ## Rewards (`rewards/`)
@@ -113,9 +113,11 @@ Each gym has scenario definitions — structured prompts that tell the agent wha
 
 ```
 scenarios/
-├── base.py                    ← Scenario dataclass (id, prompt, expected_tools, outcome_checks)
+├── __init__.py                ← Exports INVENTORY_SCENARIOS
 └── inventory.py               ← 10 inventory scenarios (create product, place order, etc.)
 ```
+
+> The `Scenario` dataclass itself lives in `rewards/base.py` — shared across all gyms.
 
 A scenario includes:
 - **`prompt`**: Natural language instruction for the LLM
@@ -148,7 +150,7 @@ trajectories/
 
 ## Evaluation CLI (`run_eval.py`)
 
-The main entry point. Connects everything:
+The main entry point. Connects everything via AutoEnv:
 
 ```python
 GYM_REGISTRY = {
@@ -156,31 +158,35 @@ GYM_REGISTRY = {
         "scenarios_loader": ...,     # what to test
         "checker_factory": ...,      # how to verify ground truth
         "transform_factory": ...,    # per-step reward transform
-        "default_openenv_url": ...,  # where the gym is running
-        "default_api_url": ...,      # where the backend API is
+        "default_api_url": ...,      # for ground truth checker (not OpenEnv)
     },
     "inventory_clone": { ... },
 }
 ```
 
-To add a new gym, you add an entry to `GYM_REGISTRY` — the rest of the evaluation infrastructure (agent, scoring, saving) is shared.
+The OpenEnv base_url is **auto-derived** from the gym's `openenv.yaml` port — no hardcoded URLs needed.
+
+To add a new gym: `pip install -e <gym>/` and add an entry to `GYM_REGISTRY` — the rest of the evaluation infrastructure (agent, scoring, saving) is shared.
 
 ## How the Pieces Connect
 
 ```
 run_eval.py ──► GYM_REGISTRY["inventory"]
                     │
-                    ├── scenarios_loader → scenarios/inventory.py  → INVENTORY_SCENARIOS
+                    ├── scenarios_loader  → scenarios/inventory.py  → INVENTORY_SCENARIOS
                     │
-                    ├── checker_factory  → rewards/inventory_checks.py → InventoryChecker
+                    ├── checker_factory   → rewards/inventory_checks.py → InventoryChecker
                     │
                     ├── transform_factory → rewards/transforms/inventory.py → InventoryStepTransform
                     │
-                    └── openenv_url     → MCPToolClient("http://localhost:9000")
-                                              │
-                                              ▼
-                                         inventory/server/app.py → InventoryEnvironment
-                                              │
-                                              ▼
-                                         inventory/main.py (FastAPI, port 8000)
+                    └── base_url ──► AutoEnv.from_env("inventory", base_url=...)
+                                         │
+                                         ▼ (auto-discovers from pip-installed package)
+                                    inventory.client.InventoryEnv
+                                         │
+                                         ▼ (connects to OpenEnv server)
+                                    inventory/server/app.py → InventoryEnvironment
+                                         │
+                                         ▼
+                                    inventory/main.py (FastAPI, port 8000)
 ```
