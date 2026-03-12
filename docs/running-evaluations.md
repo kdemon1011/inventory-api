@@ -23,7 +23,7 @@
 
 4. **Gym running via Docker**. See the gym's own README:
    - [`inventory/README.md`](../inventory/README.md)
-   - [`inventory_clone/README.md`](../inventory_clone/README.md)
+   - Each gym has its own `README.md` with setup instructions
 
 ## Basic Usage
 
@@ -71,7 +71,7 @@ Each model gets its own isolated database session — no cross-contamination bet
 
 | Option | Default | Description |
 |---|---|---|
-| `--gym` | required | Which gym to evaluate (`inventory`, `inventory_clone`, etc.) |
+| `--gym` | required | Which gym to evaluate (`inventory`, `payment_gateway`, `browser`, etc.) |
 | `--model` | `gpt-4o` | LiteLLM model string, or comma-separated for parallel mode |
 | `--scenario` | all | Run a specific scenario by ID |
 | `--api-url` | from gym config | API URL for ground truth checks |

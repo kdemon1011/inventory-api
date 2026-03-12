@@ -24,7 +24,7 @@ For gyms that store data in-memory or don't need a separate backend:
 └─────────────────────────────────────────────────┘
 ```
 
-Example: `inventory_clone/`
+Example: single-process gym
 
 Dockerfile CMD:
 ```dockerfile
@@ -81,7 +81,7 @@ openenv build inventory/
 
 ```bash
 # Single-process gym
-docker run -d --name inventory_clone -p 9000:9000 openenv-inventory-clone
+docker run -d --name my_gym -p 9000:9000 openenv-my-gym
 
 # Two-process gym (expose both ports)
 docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory

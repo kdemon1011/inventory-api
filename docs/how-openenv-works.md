@@ -281,7 +281,7 @@ The default template uses the Gymnasium-style pattern. For MCP-tool-style, you c
 │              Maps gym names → scenarios, checkers, transforms          │
 │                                                                        │
 │   inventory/                  ← Gym: real API + OpenEnv server        │
-│   inventory_clone/            ← Gym: in-memory demo (openenv init)    │
+│   payment-gateway/            ← Gym: Payment Gateway (planned)        │
 │                                                                        │
 │   scenarios/                  ← What the agent is asked to do         │
 │   rewards/                    ← How the agent is scored               │

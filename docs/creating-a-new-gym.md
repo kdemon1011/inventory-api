@@ -209,8 +209,11 @@ Each gym runs its own OpenEnv server on its own port. Pick a unique port that do
 | Gym | OpenEnv Port | Backend API Port |
 |-----|-------------|-----------------|
 | `inventory` | 9000 | 8000 |
-| `inventory_clone` | 9001 | — (in-memory) |
-| `my_new_gym` | 9002 | 8002 (if needed) |
+| `payment_gateway` | 9002 | 8002 |
+| `browser` | 9003 | 8003 |
+| `code_judge` | 9004 | 8004 |
+| `cloud_infra` | 9005 | 8005 |
+| `my_new_gym` | 9006+ | 8006+ (if needed) |
 
 ```yaml
 spec_version: 1
@@ -336,6 +339,6 @@ GYM_REGISTRY = {
 - [ ] Register in `run_eval.py` → `GYM_REGISTRY`
 - [ ] Test: `python run_eval.py --gym my_new_gym --model gpt-4o`
 
-## Reference: `inventory_clone/`
+## Reference: `inventory/`
 
-The `inventory_clone/` folder is a working example of this exact process — scaffolded via `openenv init inventory_clone`, then customized for MCP-tool pattern with in-memory storage.
+The `inventory/` folder is the reference implementation — a full MCP-tool pattern gym with FastAPI backend, SQLite database, concurrent sessions, 10 scenarios, dual reward modes, and Docker deployment. Use it as the template for all new gyms.

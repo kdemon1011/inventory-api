@@ -66,13 +66,13 @@ async def get_db(x_session_id: Optional[str] = Header(None, alias="X-Session-ID"
                 await session.rollback()
                 raise
     else:
-        async with SessionLocal() as session:
-            try:
-                yield session
-                await session.commit()
-            except Exception:
-                await session.rollback()
-                raise
+    async with SessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 async def init_db():

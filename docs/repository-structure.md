@@ -6,8 +6,11 @@ This document explains how the repository is organized, what each folder does, a
 
 ```
 ├── agent/                     ← LLM Agent (gym-agnostic)
-├── inventory/                 ← Gym: Inventory Management (full, two-process)
-├── inventory_clone/           ← Gym: Demo scaffold (single-process, in-memory)
+├── inventory/                 ← Gym: Inventory Management (Python/FastAPI)
+├── payment-gateway/           ← Gym: Payment Gateway (Python + Node.js) [planned]
+├── browser/                   ← Gym: Browser Automation (Node.js + React) [planned]
+├── code-judge/                ← Gym: Code Judge (C++) [planned]
+├── cloud-infra/               ← Gym: Cloud Infrastructure (Python) [planned]
 ├── rewards/                   ← Shared reward system (both custom and OpenEnv)
 ├── scenarios/                 ← Scenario definitions per gym
 ├── results/                   ← Evaluation results (grouped by run)
@@ -30,7 +33,7 @@ The agent is **gym-agnostic** — it works with any gym without modification.
 
 The `AgentRunner` receives a pre-connected client (from AutoEnv discovery) and uses it to interact with any OpenEnv server. It doesn't know what gym it's talking to — it just discovers tools and calls them based on LLM reasoning.
 
-## Gyms (`inventory/`, `inventory_clone/`, etc.)
+## Gyms (`inventory/`, `payment-gateway/`, `browser/`, etc.)
 
 Each gym is a self-contained folder that:
 - Wraps a real system as an OpenEnv environment
@@ -67,29 +70,16 @@ Port 9000: OpenEnv Server (MCPEnvironment)   ← agent-facing interface (concurr
 
 The OpenEnv environment's tools (e.g., `create_product`, `list_orders`) make HTTP calls to the API on port 8000. Concurrent sessions are supported — multiple agents can evaluate simultaneously with isolated databases.
 
-### Gym: `inventory_clone/` (demo, single-process)
+### Planned Gyms
 
-A simplified clone scaffolded via `openenv init inventory_clone`. Uses in-memory storage instead of a real database. Demonstrates what a new gym looks like after scaffolding.
+| Gym | Language | Ports | Status |
+|-----|----------|-------|--------|
+| `payment-gateway/` | Python (FastAPI) + Node.js (Stripe mock) | 8002 / 9002 | Planned |
+| `browser/` | Node.js (Express) + React | 8003 / 9003 | Planned |
+| `code-judge/` | C++ (judge engine + API) | 8004 / 9004 | Planned |
+| `cloud-infra/` | Python (FastAPI + AWS/Jenkins mocks) | 8005 / 9005 | Planned |
 
-```
-inventory_clone/
-├── server/
-│   ├── app.py                 ← create_app() wiring
-│   ├── inventory_clone_environment.py ← MCPEnvironment with 7 tools (in-memory dicts)
-│   ├── Dockerfile             ← Single-process Docker image
-│   └── __init__.py
-├── client.py                  ← MCPToolClient wrapper
-├── __init__.py                ← Package init
-├── pyproject.toml             ← Dependencies
-├── openenv.yaml               ← Manifest
-├── uv.lock                    ← Lock file
-└── README.md
-```
-
-Architecture: single process, no separate API:
-```
-Port 9001: OpenEnv Server (MCPEnvironment with in-memory data)
-```
+All planned gyms follow the same structure as `inventory/` — see [Creating a New Gym](creating-a-new-gym.md).
 
 ## Rewards (`rewards/`)
 
@@ -161,7 +151,10 @@ GYM_REGISTRY = {
         "transform_factory": ...,    # per-step reward transform
         "default_api_url": ...,      # for ground truth checker (not OpenEnv)
     },
-    "inventory_clone": { ... },
+    # "payment_gateway": { ... },  # planned
+    # "browser": { ... },           # planned
+    # "code_judge": { ... },        # planned
+    # "cloud_infra": { ... },       # planned
 }
 ```
 

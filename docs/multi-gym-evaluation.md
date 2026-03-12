@@ -246,10 +246,10 @@ Each gym uses a unique port range to avoid conflicts:
 | Gym | API Port | OpenEnv Port | Docker Image |
 |---|---|---|---|
 | `inventory` | 8000 | 9000 | `openenv-inventory` |
-| `inventory_clone` | — | 9001 | `openenv-inventory-clone` |
-| `math` | — | 9002 | `openenv-math` |
-| `devops` | 8003 | 9003 | `openenv-devops` |
-| *(future gym)* | 800N | 900N | `openenv-<name>` |
+| `payment_gateway` | 8002 | 9002 | `openenv-payment-gateway` |
+| `browser` | 8003 | 9003 | `openenv-browser` |
+| `code_judge` | 8004 | 9004 | `openenv-code-judge` |
+| `cloud_infra` | 8005 | 9005 | `openenv-cloud-infra` |
 
 Ports are defined in each gym's `openenv.yaml` (for OpenEnv) and `.env` (for API). AutoEnv reads `openenv.yaml` automatically — no hardcoded ports in `run_eval.py`.
 

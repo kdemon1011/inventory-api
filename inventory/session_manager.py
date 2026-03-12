@@ -6,8 +6,8 @@ Each session gets its own SQLite file in data/sessions/, ensuring that
 multiple agents evaluating simultaneously never interfere with each other.
 
 This pattern is ONLY needed for gyms that have shared persistent state
-(e.g., SQLite database). In-memory gyms (like inventory_clone) don't need
-this because each MCPEnvironment instance already has its own state.
+(e.g., SQLite database). In-memory gyms don't need this because each
+MCPEnvironment instance already has its own state.
 
 Usage:
     manager = SessionDatabaseManager()

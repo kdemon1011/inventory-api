@@ -22,10 +22,13 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ## Gyms
 
-| Gym | Type | Description | README |
-|---|---|---|---|
-| `inventory/` | API-based (two-process) | Inventory management — products + orders CRUD | [`inventory/README.md`](inventory/README.md) |
-| `inventory_clone/` | In-memory (single-process) | Demo scaffold via `openenv init` | [`inventory_clone/README.md`](inventory_clone/README.md) |
+| Gym | Language | Port (API/OpenEnv) | Description | README |
+|---|---|---|---|---|
+| `inventory/` | Python (FastAPI) | 8000 / 9000 | Inventory management — products + orders CRUD | [`inventory/README.md`](inventory/README.md) |
+| `payment-gateway/` | Python + Node.js | 8002 / 9002 | Payment processing, Stripe mock, webhooks, refunds | *Coming soon* |
+| `browser/` | Node.js + React | 8003 / 9003 | Web automation — navigate, click, fill forms, assert DOM | *Coming soon* |
+| `code-judge/` | C++ | 8004 / 9004 | Competitive programming — submit C++ code, get judge verdict | *Coming soon* |
+| `cloud-infra/` | Python | 8005 / 9005 | Cloud infrastructure — Terraform configs, AWS mock, CI/CD | *Coming soon* |
 
 Each gym has its own README with detailed architecture, running instructions, tools, scenarios, and reward examples.
 

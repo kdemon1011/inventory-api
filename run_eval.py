@@ -78,19 +78,30 @@ GYM_REGISTRY = {
         "transform_factory": lambda: _create_inventory_transform(),
         "default_api_url": "http://localhost:8000",   # for ground truth checker (not OpenEnv)
     },
-    # ── Demo gym: scaffolded via `openenv init inventory_clone` ──
-    "inventory_clone": {
-        "scenarios_loader": lambda: _load_inventory_scenarios(),   # reuses inventory scenarios
-        "checker_factory": lambda api_url, session_id=None: _create_inventory_clone_checker(),
-        "transform_factory": lambda: _create_inventory_transform(),  # reuses inventory transform
-        "default_api_url": None,                       # in-memory — no separate API
-    },
-    # Future gyms (each gets its own OpenEnv port):
+    # Future gyms — uncomment as each is implemented:
+    # "payment_gateway": {
+    #     "scenarios_loader": lambda: _load_payment_scenarios(),
+    #     "checker_factory": lambda api_url, session_id=None: _create_payment_checker(api_url, session_id),
+    #     "transform_factory": lambda: _create_payment_transform(),
+    #     "default_api_url": "http://localhost:8002",
+    # },
     # "browser": {
     #     "scenarios_loader": lambda: _load_browser_scenarios(),
-    #     "checker_factory": lambda api_url, session_id=None: _create_browser_checker(api_url),
+    #     "checker_factory": lambda api_url, session_id=None: _create_browser_checker(api_url, session_id),
     #     "transform_factory": lambda: _create_browser_transform(),
-    #     "default_api_url": "http://localhost:8002",
+    #     "default_api_url": "http://localhost:8003",
+    # },
+    # "code_judge": {
+    #     "scenarios_loader": lambda: _load_code_judge_scenarios(),
+    #     "checker_factory": lambda api_url, session_id=None: _create_code_judge_checker(api_url, session_id),
+    #     "transform_factory": lambda: _create_code_judge_transform(),
+    #     "default_api_url": "http://localhost:8004",
+    # },
+    # "cloud_infra": {
+    #     "scenarios_loader": lambda: _load_cloud_infra_scenarios(),
+    #     "checker_factory": lambda api_url, session_id=None: _create_cloud_infra_checker(api_url, session_id),
+    #     "transform_factory": lambda: _create_cloud_infra_transform(),
+    #     "default_api_url": "http://localhost:8005",
     # },
 }
 
@@ -131,27 +142,6 @@ def _create_inventory_transform():
     from rewards.transforms.inventory import InventoryStepTransform
     return InventoryStepTransform()
 
-
-def _create_inventory_clone_checker():
-    """
-    Placeholder checker for inventory_clone (in-memory, no external API).
-
-    Since the clone stores data in-memory (no persistent DB), ground truth
-    checking requires a different approach. For now, returns a no-op checker
-    that always passes — the real scoring comes from the OpenEnv transforms.
-    """
-
-    class InMemoryChecker:
-        def check_all(self, checks):
-            return [True] * len(checks)
-
-        def set_session(self, session_id):
-            pass  # No-op for in-memory
-
-        def close(self):
-            pass
-
-    return InMemoryChecker()
 
 
 def _fetch_gym_metadata(base_url: str) -> dict | None:
