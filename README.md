@@ -42,11 +42,16 @@ docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
 # 3. Run an evaluation (AutoEnv discovers and connects automatically)
 python run_eval.py --gym inventory --model gpt-4o --save --trajectory
 
+# 3b. Or run multiple models in parallel (concurrent sessions)
+python run_eval.py --gym inventory --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6 --parallel 3 --save --trajectory
+
 # 4. Stop
 docker stop inventory && docker rm inventory
 ```
 
 All gym connections use **AutoEnv auto-discovery** — no manual URLs needed. `run_eval.py` discovers the gym from its pip-installed package, reads the port from `openenv.yaml`, and connects via `AutoEnv.from_env()`.
+
+Parallel mode (`--parallel N`) runs multiple models simultaneously against a **single Docker container**, each with its own isolated database session.
 
 ## Documentation
 

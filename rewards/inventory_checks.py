@@ -5,6 +5,11 @@ Each check verifies a condition against the real Inventory API (port 8000).
 The API reads from the database, so this IS ground truth verification.
 The reward system uses these results as the dominant scoring signal (weight 0.60).
 
+Session-aware: when a session_id is provided, the checker sends an
+X-Session-ID header with all requests so the API routes to the correct
+isolated database. This enables concurrent evaluations where each model
+has its own DB.
+
 Check types:
   - product_exists      : product with given SKU exists
   - product_field       : product field matches expected value
@@ -17,18 +22,39 @@ To add checks for a new gym: create rewards/<gym>_checks.py with the same interf
 """
 
 import httpx
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 class InventoryChecker:
     """Verifies outcomes against the Inventory API (ground truth)."""
 
-    def __init__(self, api_url: str = "http://localhost:8000"):
-        self._client = httpx.Client(base_url=api_url, timeout=10.0)
+    def __init__(
+        self,
+        api_url: str = "http://localhost:8000",
+        session_id: Optional[str] = None,
+    ):
+        headers = {}
+        if session_id:
+            headers["X-Session-ID"] = session_id
+
+        self._client = httpx.Client(
+            base_url=api_url,
+            timeout=10.0,
+            headers=headers,
+        )
+        self._session_id = session_id
 
     def check_all(self, checks: List[Dict[str, Any]]) -> List[bool]:
         """Run all outcome checks, return list of pass/fail."""
         return [self._run_check(c) for c in checks]
+
+    def set_session(self, session_id: str):
+        """Update the session ID for concurrent evaluations."""
+        self._session_id = session_id
+        if session_id:
+            self._client.headers["X-Session-ID"] = session_id
+        else:
+            self._client.headers.pop("X-Session-ID", None)
 
     def close(self):
         self._client.close()

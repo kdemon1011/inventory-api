@@ -12,12 +12,9 @@ This is the main CLI entry point for evaluating LLM models. It:
 Connection is handled entirely by AutoEnv — no manual URLs required.
 AutoEnv discovers the gym from pip-installed packages (pip install -e inventory/).
 
-Each evaluation run is grouped under a run ID (auto-generated timestamp or provided via --run-id).
-This allows multiple runs to coexist for comparison:
-    results/inventory/run_20260311_1830.md    — results for that run
-    trajectories/inventory/run_20260311_1830/ — per-model trajectory JSONs
-
-The LLM never calls tools directly — everything goes through OpenEnv.
+Supports two execution modes:
+  - Sequential (default): one model at a time, backward-compatible
+  - Parallel (--parallel N): run N models simultaneously, each with isolated DB sessions
 
 Prerequisites:
     1. Install the gym:  pip install -e inventory/
@@ -25,9 +22,15 @@ Prerequisites:
     3. Run evaluation:   python run_eval.py --gym inventory --model gpt-4o
 
 Usage:
-    python run_eval.py --gym inventory --model gpt-4o
+    # Sequential (one model)
     python run_eval.py --gym inventory --model gpt-4o --save --trajectory
-    python run_eval.py --gym inventory --model gpt-4o --save --trajectory --run-id run_20260311_1830
+
+    # Parallel (multiple models, comma-separated)
+    python run_eval.py --gym inventory --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6 --parallel 3 --save --trajectory
+
+    # More examples
+    python run_eval.py --gym inventory --model gpt-4o --reward-mode openenv
+    python run_eval.py --gym inventory --model gpt-4o --scenario create_product
     python run_eval.py --gym inventory --model gpt-5.4 --temperature 1.0 --save --trajectory
 """
 
@@ -37,6 +40,7 @@ import logging
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List
 
@@ -70,21 +74,21 @@ logger = logging.getLogger(__name__)
 GYM_REGISTRY = {
     "inventory": {
         "scenarios_loader": lambda: _load_inventory_scenarios(),
-        "checker_factory": lambda api_url: _create_inventory_checker(api_url),
+        "checker_factory": lambda api_url, session_id=None: _create_inventory_checker(api_url, session_id),
         "transform_factory": lambda: _create_inventory_transform(),
         "default_api_url": "http://localhost:8000",   # for ground truth checker (not OpenEnv)
     },
     # ── Demo gym: scaffolded via `openenv init inventory_clone` ──
     "inventory_clone": {
         "scenarios_loader": lambda: _load_inventory_scenarios(),   # reuses inventory scenarios
-        "checker_factory": lambda api_url: _create_inventory_clone_checker(),
+        "checker_factory": lambda api_url, session_id=None: _create_inventory_clone_checker(),
         "transform_factory": lambda: _create_inventory_transform(),  # reuses inventory transform
         "default_api_url": None,                       # in-memory — no separate API
     },
     # Future gyms (each gets its own OpenEnv port):
     # "browser": {
     #     "scenarios_loader": lambda: _load_browser_scenarios(),
-    #     "checker_factory": lambda api_url: _create_browser_checker(api_url),
+    #     "checker_factory": lambda api_url, session_id=None: _create_browser_checker(api_url),
     #     "transform_factory": lambda: _create_browser_transform(),
     #     "default_api_url": "http://localhost:8002",
     # },
@@ -118,9 +122,9 @@ def _load_inventory_scenarios():
     return INVENTORY_SCENARIOS
 
 
-def _create_inventory_checker(api_url):
+def _create_inventory_checker(api_url, session_id=None):
     from rewards.inventory_checks import InventoryChecker
-    return InventoryChecker(api_url=api_url)
+    return InventoryChecker(api_url=api_url, session_id=session_id)
 
 
 def _create_inventory_transform():
@@ -141,10 +145,34 @@ def _create_inventory_clone_checker():
         def check_all(self, checks):
             return [True] * len(checks)
 
+        def set_session(self, session_id):
+            pass  # No-op for in-memory
+
         def close(self):
             pass
 
     return InMemoryChecker()
+
+
+def _fetch_gym_metadata(base_url: str) -> dict | None:
+    """
+    Fetch EnvironmentMetadata from the running OpenEnv server's /metadata endpoint.
+
+    Returns the metadata dict or None if the server is unreachable.
+    The readme_content field is excluded from the return to keep output manageable.
+    """
+    import httpx
+
+    try:
+        resp = httpx.get(f"{base_url}/metadata", timeout=5.0)
+        resp.raise_for_status()
+        data = resp.json()
+        # Drop readme_content — it's the full README, too large for display
+        data.pop("readme_content", None)
+        return data
+    except Exception as e:
+        logger.debug(f"Failed to fetch /metadata from {base_url}: {e}")
+        return None
 
 
 def divider(text: str = ""):
@@ -170,6 +198,7 @@ def save_results_to_markdown(
     temperature: float,
     run_id: str = "",
     reward_mode: str = "custom",
+    gym_version: str = "unknown",
 ):
     """
     Append (or create) a markdown results file for this evaluation run.
@@ -186,7 +215,8 @@ def save_results_to_markdown(
     with open(output_path, "a") as f:
         if is_new_file:
             f.write(f"# {gym.title()} Gym — Evaluation Results\n\n")
-            f.write(f"**Run ID**: `{run_id}`\n\n")
+            f.write(f"**Run ID**: `{run_id}`  \n")
+            f.write(f"**Gym Version**: `{gym_version}`\n\n")
             f.write(f"Evaluation results for the **{gym}** gym across different LLM models.\n\n")
             if reward_mode == "openenv":
                 f.write(f"**Reward Mode**: `openenv` — per-step rewards from `rewards/transforms/` + ground truth\n\n")
@@ -282,6 +312,7 @@ def save_trajectory(
     total_elapsed: float,
     run_id: str = "",
     reward_mode: str = "custom",
+    gym_version: str = "unknown",
 ):
     """
     Save a detailed trajectory JSON for this model run.
@@ -290,7 +321,7 @@ def save_trajectory(
         trajectories/<gym>/<run_id>/<model_name>.json
 
     The JSON contains:
-      - run metadata (run_id, model, gym, timestamp, temperature, reward_mode)
+      - run metadata (run_id, model, gym, gym_version, timestamp, temperature, reward_mode)
       - per-scenario trajectories with step-by-step tool calls,
         arguments, results, timestamps, and reward breakdown.
     """
@@ -308,6 +339,7 @@ def save_trajectory(
         "run_id": run_id or "untagged",
         "model": model,
         "gym": gym,
+        "gym_version": gym_version,
         "timestamp": run_ts,
         "temperature": temperature,
         "reward_mode": reward_mode,
@@ -392,6 +424,144 @@ def save_trajectory(
     return filepath
 
 
+# ── Model Worker (used by both sequential and parallel modes) ──
+
+def _run_single_model(
+    model: str,
+    gym_name: str,
+    gym_config: dict,
+    base_url: str,
+    api_url: str,
+    scenarios: list,
+    temperature: float,
+    max_tokens: int,
+    reward_mode: str,
+    run_id: str,
+    save: bool,
+    trajectory: bool,
+    verbose: bool,
+    gym_version: str = "unknown",
+) -> Dict[str, Any]:
+    """
+    Run all scenarios for a single model.
+
+    This function is self-contained: it creates its own env_client, runner,
+    and checker. This makes it safe to call from multiple threads for
+    parallel evaluation — each thread has fully isolated resources.
+
+    For API-based gyms (like inventory), the OpenEnv environment creates
+    session-scoped isolated databases, so multiple models can run
+    simultaneously against the same Docker container without interference.
+
+    Returns:
+        Dict with model name, per-scenario results, and timing info.
+    """
+    model_start = time.time()
+    model_results = []
+
+    # Each worker gets its own AutoEnv client (→ own WebSocket → own environment instance)
+    env_client = AutoEnv.from_env(gym_name, base_url=base_url)
+    env_client.__enter__()
+
+    # Each worker gets its own checker (session_id set dynamically by the runner)
+    checker = gym_config["checker_factory"](api_url)
+
+    # Each worker gets its own transform
+    transform = None
+    if reward_mode == "openenv":
+        transform = gym_config["transform_factory"]()
+
+    # Create agent runner
+    runner = AgentRunner(
+        model=model,
+        env_client=env_client,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        reward_mode=reward_mode,
+        transform=transform,
+    )
+
+    try:
+        for i, scenario in enumerate(scenarios, 1):
+            print(f"\n  [{model}] Scenario {i}/{len(scenarios)}: {scenario.id}")
+
+            start = time.time()
+            try:
+                episode, breakdown = runner.run_scenario(scenario, checker)
+                elapsed = time.time() - start
+
+                # Outcome checks (checker is already session-scoped from runner)
+                outcome_results = checker.check_all(scenario.outcome_checks)
+
+                model_results.append({
+                    "scenario": scenario.id,
+                    "total_reward": breakdown.total,
+                    "breakdown": breakdown,
+                    "steps": len(episode.steps),
+                    "elapsed": elapsed,
+                    "episode": episode,
+                    "outcome_results": outcome_results,
+                })
+
+                print(f"  [{model}] {scenario.id}: {breakdown.total:.2f} ({len(episode.steps)} steps, {elapsed:.1f}s)")
+
+            except Exception as e:
+                elapsed = time.time() - start
+                logger.exception(f"[{model}] Scenario {scenario.id} failed")
+                model_results.append({
+                    "scenario": scenario.id,
+                    "total_reward": 0.0,
+                    "breakdown": None,
+                    "steps": 0,
+                    "elapsed": elapsed,
+                    "error": str(e),
+                })
+                print(f"  [{model}] {scenario.id}: ERROR — {e}")
+
+    finally:
+        if hasattr(checker, "close"):
+            checker.close()
+        env_client.__exit__(None, None, None)
+
+    model_elapsed = time.time() - model_start
+
+    # Save results and trajectory for this model
+    if save:
+        output_path = os.path.join(
+            os.path.dirname(__file__), "results", gym_name, f"{run_id}.md"
+        )
+        save_results_to_markdown(
+            results=model_results,
+            model=model,
+            gym=gym_name,
+            output_path=output_path,
+            total_elapsed=model_elapsed,
+            temperature=temperature,
+            run_id=run_id,
+            reward_mode=reward_mode,
+            gym_version=gym_version,
+        )
+
+    if trajectory:
+        save_trajectory(
+            results=model_results,
+            scenarios=scenarios,
+            model=model,
+            gym=gym_name,
+            temperature=temperature,
+            total_elapsed=model_elapsed,
+            run_id=run_id,
+            reward_mode=reward_mode,
+            gym_version=gym_version,
+        )
+
+    return {
+        "model": model,
+        "results": model_results,
+        "elapsed": model_elapsed,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Evaluate an LLM agent against OpenEnv gym scenarios.",
@@ -401,11 +571,16 @@ Prerequisites:
   pip install -e inventory/          # install gym for AutoEnv discovery
 
 Examples:
+  # Sequential (one model)
   python run_eval.py --gym inventory --model gpt-4o
   python run_eval.py --gym inventory --model gpt-4o --reward-mode openenv
-  python run_eval.py --gym inventory --model claude-sonnet-4-6
+
+  # Parallel (multiple models)
+  python run_eval.py --gym inventory --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6 --parallel 3
+  python run_eval.py --gym inventory --model gpt-4o-mini,gpt-4o --parallel 2 --save --trajectory
+
+  # Other options
   python run_eval.py --gym inventory --model gpt-4o --scenario create_product
-  python run_eval.py --gym inventory --model gpt-4o --save --trajectory
   python run_eval.py --gym inventory --model gpt-5.4 --temperature 1.0 --save --trajectory
         """,
     )
@@ -418,7 +593,8 @@ Examples:
     parser.add_argument(
         "--model",
         default=os.getenv("LLM_MODEL", "gpt-4o"),
-        help="LiteLLM model string (default: $LLM_MODEL or gpt-4o)",
+        help="LiteLLM model string, or comma-separated for parallel mode "
+             "(e.g., 'gpt-4o' or 'gpt-4o-mini,gpt-4o,claude-sonnet-4-6')",
     )
     parser.add_argument(
         "--scenario",
@@ -445,7 +621,7 @@ Examples:
     parser.add_argument(
         "--save",
         action="store_true",
-        help="Save results to results/<gym>.md",
+        help="Save results to results/<gym>/<run_id>.md",
     )
     parser.add_argument(
         "--trajectory",
@@ -466,12 +642,23 @@ Examples:
              "or 'openenv' (per-step from rewards/transforms/). Default: custom",
     )
     parser.add_argument(
+        "--parallel",
+        type=int,
+        default=1,
+        help="Number of models to evaluate in parallel (default: 1 = sequential). "
+             "Use with comma-separated --model values. Each model gets its own "
+             "isolated DB session via OpenEnv concurrent sessions.",
+    )
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable debug logging",
     )
 
     args = parser.parse_args()
+
+    # Parse model list (comma-separated for parallel)
+    models = [m.strip() for m in args.model.split(",") if m.strip()]
 
     # Generate or use provided run_id
     if args.run_id:
@@ -503,7 +690,7 @@ Examples:
     else:
         scenarios = all_scenarios
 
-    # Discover and connect to gym via AutoEnv
+    # AutoEnv discovery (verify once — individual workers create their own clients)
     divider("AutoEnv Discovery")
     print(f"  Discovering gym '{args.gym}' via AutoEnv...")
     env_info = AutoEnv.get_env_info(args.gym)
@@ -511,15 +698,32 @@ Examples:
     print(f"  Client class: {env_info['env_class']} from {env_info['module']}")
     print(f"  Base URL: {base_url} (auto-derived from openenv.yaml port)")
 
-    env_client = AutoEnv.from_env(args.gym, base_url=base_url)
-    env_client.__enter__()
-    print(f"  Connected to {args.gym} OpenEnv server.")
+    # Fetch EnvironmentMetadata from the running OpenEnv server
+    gym_metadata = _fetch_gym_metadata(base_url)
+    if gym_metadata:
+        print(f"\n  ── Environment Metadata (GET {base_url}/metadata) ──")
+        print(f"  Name:        {gym_metadata.get('name', 'N/A')}")
+        print(f"  Version:     {gym_metadata.get('version', 'N/A')}")
+        print(f"  Description: {gym_metadata.get('description', 'N/A')}")
+        print(f"  Author:      {gym_metadata.get('author', 'N/A')}")
+        if gym_metadata.get("documentation_url"):
+            print(f"  Docs:        {gym_metadata['documentation_url']}")
+    else:
+        print(f"\n  ⚠ Could not fetch /metadata from {base_url} (server may not be running)")
+
+    # Determine execution mode
+    is_parallel = args.parallel > 1 and len(models) > 1
+    mode_str = f"Parallel ({args.parallel} workers)" if is_parallel else "Sequential"
+
+    # Extract gym version from metadata (if available)
+    gym_version = gym_metadata.get("version", "unknown") if gym_metadata else "unknown"
 
     # Print header
     divider("LLM Evaluation Run")
-    print(f"  Gym:          {args.gym}")
-    print(f"  Model:        {args.model}")
+    print(f"  Gym:          {args.gym} (v{gym_version})")
+    print(f"  Models:       {', '.join(models)}")
     print(f"  Run ID:       {run_id}")
+    print(f"  Mode:         {mode_str}")
     print(f"  Discovery:    AutoEnv ({env_info['package']})")
     print(f"  Base URL:     {base_url}")
     print(f"  API URL:      {api_url}")
@@ -527,27 +731,182 @@ Examples:
     print(f"  Temperature:  {args.temperature}")
     print(f"  Reward Mode:  {args.reward_mode}")
 
-    # Create gym-specific transform (only needed for openenv reward mode)
-    transform = None
-    if args.reward_mode == "openenv":
-        transform = gym_config["transform_factory"]()
+    if is_parallel:
+        print(f"\n  Concurrent sessions: Each model gets an isolated DB via OpenEnv sessions.")
 
-    # Create agent runner — uses AutoEnv-discovered client
-    runner = AgentRunner(
-        model=args.model,
-        env_client=env_client,
-        temperature=args.temperature,
-        max_tokens=args.max_tokens,
-        reward_mode=args.reward_mode,
-        transform=transform,
-    )
+    # ── Execute ──
+    total_start = time.time()
+    all_model_results = []
 
-    # Create gym-specific checker
+    if is_parallel:
+        # ── Parallel Mode ──
+        # Each model runs in its own thread with isolated resources:
+        # - Own AutoEnv client (own WebSocket → own InventoryEnvironment instance)
+        # - Own session-scoped database (via X-Session-ID)
+        # - Own checker (routed to session DB)
+        divider(f"Parallel Evaluation ({len(models)} models, {args.parallel} workers)")
+
+        max_workers = min(args.parallel, len(models))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {}
+            for model in models:
+                future = executor.submit(
+                    _run_single_model,
+                    model=model,
+                    gym_name=args.gym,
+                    gym_config=gym_config,
+                    base_url=base_url,
+                    api_url=api_url,
+                    scenarios=scenarios,
+                    temperature=args.temperature,
+                    max_tokens=args.max_tokens,
+                    reward_mode=args.reward_mode,
+                    run_id=run_id,
+                    save=args.save,
+                    trajectory=args.trajectory,
+                    verbose=args.verbose,
+                    gym_version=gym_version,
+                )
+                futures[future] = model
+
+            for future in as_completed(futures):
+                model = futures[future]
+                try:
+                    result = future.result()
+                    all_model_results.append(result)
+                    print(f"\n  ✅ {model} completed in {result['elapsed']:.1f}s")
+                except Exception as e:
+                    print(f"\n  ❌ {model} FAILED: {e}")
+                    logger.exception(f"Model {model} failed")
+                    all_model_results.append({
+                        "model": model,
+                        "results": [],
+                        "elapsed": 0.0,
+                        "error": str(e),
+                    })
+
+    else:
+        # ── Sequential Mode (backward compatible) ──
+        for model in models:
+            if len(models) > 1:
+                divider(f"Model: {model}")
+
+            # For single-model sequential, show the detailed output
+            if len(models) == 1:
+                # Use the existing detailed flow for single model
+                result = _run_single_model_detailed(
+                    model=model,
+                    gym_name=args.gym,
+                    gym_config=gym_config,
+                    base_url=base_url,
+                    api_url=api_url,
+                    scenarios=scenarios,
+                    temperature=args.temperature,
+                    max_tokens=args.max_tokens,
+                    reward_mode=args.reward_mode,
+                    run_id=run_id,
+                    save=args.save,
+                    trajectory=args.trajectory,
+                    gym_version=gym_version,
+                )
+            else:
+                result = _run_single_model(
+                    model=model,
+                    gym_name=args.gym,
+                    gym_config=gym_config,
+                    base_url=base_url,
+                    api_url=api_url,
+                    scenarios=scenarios,
+                    temperature=args.temperature,
+                    max_tokens=args.max_tokens,
+                    reward_mode=args.reward_mode,
+                    run_id=run_id,
+                    save=args.save,
+                    trajectory=args.trajectory,
+                    verbose=args.verbose,
+                    gym_version=gym_version,
+                )
+            all_model_results.append(result)
+
+    # ── Print Overall Summary ──
+    total_elapsed = time.time() - total_start
+    divider("Evaluation Summary")
+
+    for mr in all_model_results:
+        model = mr["model"]
+        results = mr.get("results", [])
+        model_elapsed = mr.get("elapsed", 0.0)
+
+        if not results:
+            print(f"\n  Model: {model} — FAILED ({mr.get('error', 'unknown')})")
+            continue
+
+        total_reward = sum(r["total_reward"] for r in results)
+        avg_reward = total_reward / len(results) if results else 0.0
+
+        print(f"\n  Model: {model}")
+        print(f"  Time:  {model_elapsed:.1f}s")
+        print(f"  {'Scenario':<30} {'Reward':>8} {'Steps':>6} {'Time':>6}")
+        print(f"  {'─' * 30} {'─' * 8} {'─' * 6} {'─' * 6}")
+
+        for r in results:
+            reward_str = f"{r['total_reward']:.2f}" if r.get("breakdown") else "ERROR"
+            print(f"  {r['scenario']:<30} {reward_str:>8} {r['steps']:>6} {r['elapsed']:>5.1f}s")
+
+        print(f"  {'─' * 30} {'─' * 8} {'─' * 6} {'─' * 6}")
+        print(f"  {'AVERAGE':<30} {avg_reward:>8.2f}")
+
+    # Overall timing
+    if len(models) > 1:
+        print(f"\n  Total time (all models): {total_elapsed:.1f}s")
+        if is_parallel:
+            seq_time = sum(mr.get("elapsed", 0.0) for mr in all_model_results)
+            speedup = seq_time / total_elapsed if total_elapsed > 0 else 1.0
+            print(f"  Sequential equivalent:   {seq_time:.1f}s")
+            print(f"  Speedup:                 {speedup:.1f}x")
+
+
+def _run_single_model_detailed(
+    model: str,
+    gym_name: str,
+    gym_config: dict,
+    base_url: str,
+    api_url: str,
+    scenarios: list,
+    temperature: float,
+    max_tokens: int,
+    reward_mode: str,
+    run_id: str,
+    save: bool,
+    trajectory: bool,
+    gym_version: str = "unknown",
+) -> Dict[str, Any]:
+    """
+    Run all scenarios for a single model with DETAILED per-step output.
+
+    This preserves the existing detailed output format for the common case
+    of running a single model (backward compatible).
+    """
+    model_start = time.time()
+    results = []
+
+    env_client = AutoEnv.from_env(gym_name, base_url=base_url)
+    env_client.__enter__()
+
     checker = gym_config["checker_factory"](api_url)
 
-    # Run scenarios
-    results = []
-    total_start = time.time()
+    transform = None
+    if reward_mode == "openenv":
+        transform = gym_config["transform_factory"]()
+
+    runner = AgentRunner(
+        model=model,
+        env_client=env_client,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        reward_mode=reward_mode,
+        transform=transform,
+    )
 
     try:
         for i, scenario in enumerate(scenarios, 1):
@@ -607,63 +966,49 @@ Examples:
                 })
 
     finally:
-        # Clean up
         if hasattr(checker, "close"):
             checker.close()
         env_client.__exit__(None, None, None)
         logger.info("AutoEnv client disconnected.")
 
-    # Print summary
-    total_elapsed = time.time() - total_start
-    divider("Evaluation Summary")
-    print(f"  Model:    {args.model}")
-    print(f"  Gym:      {args.gym}")
-    print(f"  Time:     {total_elapsed:.1f}s")
-    print()
+    model_elapsed = time.time() - model_start
 
-    print(f"  {'Scenario':<30} {'Reward':>8} {'Steps':>6} {'Time':>6}")
-    print(f"  {'─' * 30} {'─' * 8} {'─' * 6} {'─' * 6}")
-
-    total_reward = 0.0
-    for r in results:
-        reward_str = f"{r['total_reward']:.2f}" if r.get("breakdown") else "ERROR"
-        print(f"  {r['scenario']:<30} {reward_str:>8} {r['steps']:>6} {r['elapsed']:>5.1f}s")
-        total_reward += r["total_reward"]
-
-    avg_reward = total_reward / len(results) if results else 0.0
-    print(f"  {'─' * 30} {'─' * 8} {'─' * 6} {'─' * 6}")
-    print(f"  {'AVERAGE':<30} {avg_reward:>8.2f}")
-    print()
-
-    # Save results to markdown if requested
-    if args.save:
+    # Save
+    if save:
         output_path = os.path.join(
-            os.path.dirname(__file__), "results", args.gym, f"{run_id}.md"
+            os.path.dirname(__file__), "results", gym_name, f"{run_id}.md"
         )
         save_results_to_markdown(
             results=results,
-            model=args.model,
-            gym=args.gym,
+            model=model,
+            gym=gym_name,
             output_path=output_path,
-            total_elapsed=total_elapsed,
-            temperature=args.temperature,
+            total_elapsed=model_elapsed,
+            temperature=temperature,
             run_id=run_id,
-            reward_mode=args.reward_mode,
+            reward_mode=reward_mode,
+            gym_version=gym_version,
         )
         print(f"\n  Results saved: {output_path}")
 
-    # Save trajectory JSON if requested
-    if args.trajectory:
+    if trajectory:
         save_trajectory(
             results=results,
             scenarios=scenarios,
-            model=args.model,
-            gym=args.gym,
-            temperature=args.temperature,
-            total_elapsed=total_elapsed,
+            model=model,
+            gym=gym_name,
+            temperature=temperature,
+            total_elapsed=model_elapsed,
             run_id=run_id,
-            reward_mode=args.reward_mode,
+            reward_mode=reward_mode,
+            gym_version=gym_version,
         )
+
+    return {
+        "model": model,
+        "results": results,
+        "elapsed": model_elapsed,
+    }
 
 
 def _short_json(obj, max_len=80):

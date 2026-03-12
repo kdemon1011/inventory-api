@@ -64,9 +64,43 @@ This single line creates:
 - `POST /reset` — Reset the environment
 - `POST /step` — Execute an action (tool call)
 - `GET /state` — Get current environment state
+- `GET /metadata` — Environment name, version, description (from `get_metadata()`)
 - `GET /health` — Health check
 - `GET /schema` — Action/Observation JSON schemas
 - `WebSocket /ws` — Persistent connection for the agent
+
+### EnvironmentMetadata (get_metadata)
+
+Every OpenEnv environment has a `get_metadata()` method that returns structured information about the environment. The default implementation returns just the class name; gym authors override it to provide richer data.
+
+```python
+def get_metadata(self) -> EnvironmentMetadata:
+    return EnvironmentMetadata(
+        name="inventory_env",
+        description="Inventory Management — 10 MCP tools ...",
+        version="0.5.0",
+        author="RL Gyms Team",
+        readme_content=open("README.md").read(),  # optional, full README
+        documentation_url="inventory/README.md",   # optional, docs link
+    )
+```
+
+`create_app()` automatically exposes this as `GET /metadata` on the OpenEnv server. This is useful for:
+
+- **AutoEnv discovery** — `AutoEnv.get_env_info()` returns package-level info, while `/metadata` returns runtime info from the actual environment instance
+- **Evaluation logging** — `run_eval.py` fetches `/metadata` before each run and embeds the gym version in results markdown and trajectory JSON, so you always know which version of the gym produced which scores
+- **Web UI** — the auto-generated OpenAPI docs at `/docs` display the metadata
+
+Available fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `name` | `str` | Environment identifier |
+| `description` | `str` | What the environment does |
+| `version` | `str` (optional) | Semantic version |
+| `author` | `str` (optional) | Who built it |
+| `readme_content` | `str` (optional) | Full README text |
+| `documentation_url` | `str` (optional) | Link to docs |
 
 ### MCPToolClient
 
@@ -124,6 +158,25 @@ After each action, the agent receives an observation:
 
 - **CallToolObservation** — result of a tool call (includes `result`, `error`, `tool_name`)
 - **Observation** — generic observation (used for resets, fallbacks)
+
+### Concurrent Sessions
+
+OpenEnv supports running multiple agents against the same server simultaneously. An environment class declares this by setting:
+
+```python
+class InventoryEnvironment(MCPEnvironment):
+    SUPPORTS_CONCURRENT_SESSIONS: bool = True
+```
+
+When enabled, `create_app()` with `max_concurrent_envs=None` allows the server to create **separate `MCPEnvironment` instances** for each WebSocket connection. Each instance has its own state, its own HTTP client, and (for API-based gyms) its own isolated database.
+
+For the Inventory gym, session isolation works via:
+1. **Environment creates session** — `reset()` generates a UUID, calls `POST /sessions?session_id=<uuid>` to create an isolated SQLite DB
+2. **Environment routes calls** — All HTTP requests include `X-Session-ID: <uuid>` header
+3. **API routes to session DB** — The `get_db()` dependency reads the header and returns a session-scoped database connection
+4. **Cleanup on close** — The environment calls `DELETE /sessions/<uuid>` to delete the session DB file
+
+This allows `run_eval.py --parallel N` to evaluate N models simultaneously against one Docker container.
 
 ### Transforms
 
@@ -245,3 +298,5 @@ The evaluation flow:
 4. **For each scenario**: Agent resets env → discovers tools → reasons with LLM → calls tools → gets observations → repeat until max steps
 5. **Score**: Ground truth checked against real database; per-step or episode-level reward calculated
 6. **Save**: Results to markdown, trajectories to JSON
+
+For parallel evaluation (`--parallel N`), step 3 creates N independent AutoEnv clients, each with its own session-scoped database, and runs them concurrently via thread pool.

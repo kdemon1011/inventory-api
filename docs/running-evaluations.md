@@ -28,7 +28,7 @@
 ## Basic Usage
 
 ```bash
-# Evaluate a model on all scenarios
+# Evaluate a single model on all scenarios
 python run_eval.py --gym inventory --model gpt-4o
 
 # Save results to markdown + trajectory JSON
@@ -45,6 +45,26 @@ python run_eval.py --gym inventory --model gpt-4o --save --trajectory --run-id r
 python run_eval.py --gym inventory --model claude-sonnet-4-6 --save --trajectory --run-id run_20260311_1830
 ```
 
+### Parallel Evaluation
+
+Run multiple models simultaneously with `--parallel`:
+
+```bash
+# Run 3 models in parallel (comma-separated)
+python run_eval.py --gym inventory \
+  --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6 \
+  --parallel 3 \
+  --save --trajectory
+
+# 2 workers for 4 models (models queue for available workers)
+python run_eval.py --gym inventory \
+  --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6,gpt-5 \
+  --parallel 2 \
+  --save --trajectory
+```
+
+Each model gets its own isolated database session — no cross-contamination between concurrent evaluations. See [Concurrent Sessions](#concurrent-sessions) below.
+
 > Some models require `--temperature 1.0` (e.g., `gpt-5`, `gpt-5.4`, `o3-mini`, `o3-pro`, `o4-mini`).
 
 ## CLI Options
@@ -52,7 +72,7 @@ python run_eval.py --gym inventory --model claude-sonnet-4-6 --save --trajectory
 | Option | Default | Description |
 |---|---|---|
 | `--gym` | required | Which gym to evaluate (`inventory`, `inventory_clone`, etc.) |
-| `--model` | `gpt-4o` | LiteLLM model string |
+| `--model` | `gpt-4o` | LiteLLM model string, or comma-separated for parallel mode |
 | `--scenario` | all | Run a specific scenario by ID |
 | `--api-url` | from gym config | API URL for ground truth checks |
 | `--temperature` | `0.0` | LLM sampling temperature |
@@ -61,6 +81,7 @@ python run_eval.py --gym inventory --model claude-sonnet-4-6 --save --trajectory
 | `--trajectory` | off | Save trajectory JSON to `trajectories/<gym>/<run_id>/` |
 | `--run-id` | auto | Run ID for grouping results + trajectories |
 | `--reward-mode` | `custom` | `custom` (episode-level) or `openenv` (per-step transform) |
+| `--parallel` | `1` | Number of models to evaluate in parallel (requires comma-separated `--model`) |
 | `-v` | off | Verbose/debug logging |
 
 > **No `--openenv-url` flag.** Connection is handled by AutoEnv — the base URL comes from the gym's registry config (derived from `openenv.yaml` port).
@@ -123,6 +144,24 @@ Any model supported by [LiteLLM](https://docs.litellm.ai/docs/providers):
 | Ollama (local) | `ollama/llama3`, `ollama/mistral` | — (no key needed) |
 | Google | `gemini/gemini-pro` | `GEMINI_API_KEY` |
 | And 100+ more... | See LiteLLM docs | Varies |
+
+## Concurrent Sessions
+
+When using `--parallel`, each model evaluation runs in its own thread with fully isolated resources:
+
+1. **Own AutoEnv client** — Each thread creates a separate `AutoEnv.from_env()` connection, resulting in its own WebSocket and its own `InventoryEnvironment` instance on the server side.
+
+2. **Own session database** — Each `env.reset()` creates a unique session ID and requests an isolated SQLite database via the API's `POST /sessions` endpoint. All subsequent HTTP calls from that environment instance include the `X-Session-ID` header, routing reads/writes to the session-specific DB.
+
+3. **Own ground truth checker** — The `AgentRunner` retrieves the session ID from the environment (via the `get_session_info` tool) and passes it to the checker, which includes `X-Session-ID` in its API requests.
+
+4. **Automatic cleanup** — When the environment closes, it deletes its session database via `DELETE /sessions/<session_id>`.
+
+This allows **one Docker container** to serve multiple concurrent evaluations without cross-contamination. The OpenEnv environment class declares `SUPPORTS_CONCURRENT_SESSIONS = True` to enable this.
+
+### How `get_session_info` works
+
+After `env.reset()`, the `AgentRunner` calls the `get_session_info` tool (an infrastructure tool, hidden from the LLM) to retrieve the session ID. This session ID is then used to scope the ground truth checker to the correct database. The LLM never sees this tool — it's filtered out of `list_tools()` before being passed to the LLM.
 
 ## GYM_REGISTRY
 

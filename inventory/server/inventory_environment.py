@@ -11,14 +11,23 @@ real framework. Instead of building custom reset/step/state logic, we:
 Each tool maps to an operation on the Inventory API (running on port 8000).
 The LLM agent discovers tools via list_tools(), then calls them via env.step().
 
+Concurrent Sessions:
+    This environment sets SUPPORTS_CONCURRENT_SESSIONS = True, allowing
+    multiple agents to evaluate simultaneously. Each session creates an
+    isolated SQLite database via the API's session management endpoints
+    (POST /sessions). All tool HTTP calls include an X-Session-ID header
+    to route to the correct isolated DB.
+
 Architecture:
     ┌─────────────┐  WebSocket   ┌──────────────────────┐  HTTP    ┌──────────────┐
     │  LLM Agent  │ ──────────► │  THIS ENVIRONMENT    │ ───────► │ Inventory API│
     │  (run_eval) │ ◄────────── │  (OpenEnv, port 9000)│ ◄─────── │ (port 8000)  │
     └─────────────┘              └──────────────────────┘          └──────────────┘
         Uses MCPToolClient         Inherits MCPEnvironment           FastAPI + SQLite
+                                   Session-scoped HTTP calls         Session-scoped DBs
 """
 
+import logging
 import os
 import sys
 from typing import Any, Optional
@@ -29,11 +38,15 @@ from fastmcp import FastMCP
 
 # ── OpenEnv Imports (the REAL library) ──
 from openenv.core.env_server.mcp_environment import MCPEnvironment
-from openenv.core.env_server.types import Action, Observation, State
+from openenv.core.env_server.types import Action, EnvironmentMetadata, Observation, State
 
-# Add parent directory so we can import config
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from config import INVENTORY_API_URL
+# Load .env from the gym root (one level up from server/)
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+
+INVENTORY_API_URL = os.getenv("INVENTORY_API_URL", "http://localhost:8000")
+
+logger = logging.getLogger(__name__)
 
 
 class InventoryEnvironment(MCPEnvironment):
@@ -45,12 +58,21 @@ class InventoryEnvironment(MCPEnvironment):
     - Defines 10 tools using FastMCP decorators
     - Each tool calls the real Inventory API via HTTP
     - Tracks episode state (step count, reward)
+    - Supports concurrent sessions via session-scoped DB isolation
 
     The AI agent interacts with this via:
       1. list_tools()  → discovers available tools
       2. call_tool("create_product", name="Mouse", sku="M1", price=9.99)
       3. OpenEnv handles all the WebSocket/HTTP plumbing automatically
+
+    Concurrent session support:
+      - SUPPORTS_CONCURRENT_SESSIONS = True allows multiple WebSocket sessions
+      - Each reset() creates a new session ID → isolated DB
+      - All HTTP calls include X-Session-ID header for DB routing
+      - close() deletes the session and cleans up the DB
     """
+
+    SUPPORTS_CONCURRENT_SESSIONS: bool = True
 
     def __init__(self):
         """Initialize the environment with FastMCP tools."""
@@ -58,7 +80,11 @@ class InventoryEnvironment(MCPEnvironment):
         # Create the MCP server — this is OpenEnv's tool registry
         mcp = FastMCP("inventory_env")
 
+        # Session ID for DB isolation (set during reset)
+        self._session_id: Optional[str] = None
+
         # HTTP client for calling the real Inventory API
+        # Headers are updated with X-Session-ID on reset()
         self._http_client = httpx.Client(
             base_url=INVENTORY_API_URL, timeout=30.0
         )
@@ -70,6 +96,23 @@ class InventoryEnvironment(MCPEnvironment):
         # Define all tools using FastMCP decorators
         # These are auto-discovered by OpenEnv's MCPEnvironment
         # ────────────────────────────────────────────────
+
+        @mcp.tool()
+        def get_session_info() -> dict:
+            """
+            Get the current session information.
+
+            Returns the session_id used for database isolation in concurrent
+            evaluation mode. The agent runner calls this after reset() to
+            route ground truth checks to the correct session database.
+
+            Returns:
+                Dict with session_id (or null if no session is active)
+            """
+            return {
+                "session_id": self._session_id,
+                "episode_id": self._state.episode_id,
+            }
 
         @mcp.tool()
         def create_product(
@@ -289,21 +332,48 @@ class InventoryEnvironment(MCPEnvironment):
         """
         Reset the environment for a new episode.
 
-        Called at the start of each evaluation episode.
-        Resets the step counter and episode state.
+        Creates a new session with an isolated database via the API.
+        All subsequent tool calls will use this session's DB.
 
         Returns:
             Observation with done=False, indicating the episode has started.
         """
+        # Generate a unique session ID for DB isolation
+        self._session_id = str(uuid4())
+
+        # Create the isolated session DB via the API
+        try:
+            resp = self._http_client.post(
+                "/sessions",
+                params={"session_id": self._session_id},
+            )
+            resp.raise_for_status()
+            logger.info(f"Session created: {self._session_id}")
+        except Exception as e:
+            logger.warning(
+                f"Failed to create session '{self._session_id}': {e}. "
+                "Falling back to default DB."
+            )
+            self._session_id = None
+
+        # Set the session header on the HTTP client for all subsequent calls
+        if self._session_id:
+            self._http_client.headers["X-Session-ID"] = self._session_id
+        else:
+            self._http_client.headers.pop("X-Session-ID", None)
+
         self._state = State(
-            episode_id=episode_id or str(uuid4()),
+            episode_id=episode_id or self._session_id or str(uuid4()),
             step_count=0,
         )
 
         return Observation(
             done=False,
             reward=0.0,
-            metadata={"status": "ready"},
+            metadata={
+                "status": "ready",
+                "session_id": self._session_id,
+            },
         )
 
     def _step_impl(
@@ -347,7 +417,52 @@ class InventoryEnvironment(MCPEnvironment):
         """Get the current environment state."""
         return self._state
 
+    def get_metadata(self) -> EnvironmentMetadata:
+        """
+        Return rich metadata for the OpenEnv Web UI and AutoEnv discovery.
+
+        This overrides the default get_metadata() which only returns
+        the class name. Provides human-readable description, version,
+        and documentation links.
+        """
+        readme_content = None
+        try:
+            readme_path = os.path.join(
+                os.path.dirname(__file__), "..", "README.md"
+            )
+            if os.path.exists(readme_path):
+                with open(readme_path, "r") as f:
+                    readme_content = f.read()
+        except Exception:
+            pass
+
+        return EnvironmentMetadata(
+            name="inventory_env",
+            description=(
+                "Inventory Management — 10 MCP tools for product + order CRUD "
+                "over a real SQLite-backed FastAPI. Supports concurrent sessions "
+                "with per-session database isolation."
+            ),
+            version="0.5.0",
+            author="RL Gyms Team",
+            readme_content=readme_content,
+            documentation_url="inventory/README.md",
+        )
+
     def close(self) -> None:
-        """Clean up resources."""
+        """
+        Clean up resources.
+
+        Deletes the session DB if one was created, then closes the HTTP client.
+        """
+        if self._session_id:
+            try:
+                self._http_client.delete(f"/sessions/{self._session_id}")
+                logger.info(f"Session deleted: {self._session_id}")
+            except Exception as e:
+                logger.warning(f"Failed to delete session: {e}")
+            self._session_id = None
+
+        self._http_client.headers.pop("X-Session-ID", None)
         self._http_client.close()
         super().close()

@@ -43,14 +43,15 @@ A real inventory management API (FastAPI + SQLite) wrapped as an OpenEnv environ
 
 ```
 inventory/
-├── main.py                    ← FastAPI backend (products + orders CRUD)
-├── database.py                ← SQLAlchemy models + SQLite
+├── main.py                    ← FastAPI backend (products + orders CRUD + session endpoints)
+├── database.py                ← SQLAlchemy engine + session-aware get_db()
+├── session_manager.py         ← Per-session SQLite DB isolation for concurrent evaluation
 ├── schemas.py                 ← Pydantic request/response models
 ├── services.py                ← Business logic (stock management, order totals)
-├── config.py                  ← Configuration (ports, DB path)
+├── .env                       ← Configuration (ports, DB URL, concurrency)
 ├── server/                    ← OpenEnv layer
-│   ├── app.py                 ← create_app() with MCPAction union
-│   └── inventory_environment.py ← MCPEnvironment with 10 tools (calls the real API)
+│   ├── app.py                 ← create_app() with MCPAction union + max_concurrent_envs
+│   └── inventory_environment.py ← MCPEnvironment with 10 tools + get_session_info
 ├── client.py                  ← MCPToolClient + AutoEnv type aliases
 ├── Dockerfile                 ← Docker image (runs both API + OpenEnv server)
 ├── pyproject.toml             ← Dependencies + entry point
@@ -60,11 +61,11 @@ inventory/
 
 Architecture: two processes inside one Docker container:
 ```
-Port 8000: Inventory API (FastAPI + SQLite)  ← real business logic
-Port 9000: OpenEnv Server (MCPEnvironment)   ← agent-facing interface
+Port 8000: Inventory API (FastAPI + SQLite)  ← real business logic + session management
+Port 9000: OpenEnv Server (MCPEnvironment)   ← agent-facing interface (concurrent sessions)
 ```
 
-The OpenEnv environment's tools (e.g., `create_product`, `list_orders`) make HTTP calls to the API on port 8000.
+The OpenEnv environment's tools (e.g., `create_product`, `list_orders`) make HTTP calls to the API on port 8000. Concurrent sessions are supported — multiple agents can evaluate simultaneously with isolated databases.
 
 ### Gym: `inventory_clone/` (demo, single-process)
 
@@ -165,6 +166,10 @@ GYM_REGISTRY = {
 ```
 
 The OpenEnv base_url is **auto-derived** from the gym's `openenv.yaml` port — no hardcoded URLs needed.
+
+Supports two execution modes:
+- **Sequential** (default): One model at a time, backward-compatible
+- **Parallel** (`--parallel N`): N models simultaneously, each with its own AutoEnv client and isolated DB session
 
 To add a new gym: `pip install -e <gym>/` and add an entry to `GYM_REGISTRY` — the rest of the evaluation infrastructure (agent, scoring, saving) is shared.
 
