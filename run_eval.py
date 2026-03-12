@@ -66,13 +66,21 @@ GYM_REGISTRY = {
         "default_openenv_url": "http://localhost:9000",
         "default_api_url": "http://localhost:8000",
     },
-    # Future gyms:
+    # ── Demo gym: scaffolded via `openenv init inventory_clone` ──
+    "inventory_clone": {
+        "scenarios_loader": lambda: _load_inventory_scenarios(),   # reuses inventory scenarios
+        "checker_factory": lambda api_url: _create_inventory_clone_checker(),
+        "transform_factory": lambda: _create_inventory_transform(),  # reuses inventory transform
+        "default_openenv_url": "http://localhost:9001",  # different port from inventory (9000)
+        "default_api_url": None,  # in-memory — no separate API
+    },
+    # Future gyms (each gets its own OpenEnv port):
     # "browser": {
     #     "scenarios_loader": lambda: _load_browser_scenarios(),
     #     "checker_factory": lambda api_url: _create_browser_checker(api_url),
     #     "transform_factory": lambda: _create_browser_transform(),
-    #     "default_openenv_url": "http://localhost:9001",
-    #     "default_api_url": "http://localhost:8001",
+    #     "default_openenv_url": "http://localhost:9002",
+    #     "default_api_url": "http://localhost:8002",
     # },
 }
 
@@ -90,6 +98,25 @@ def _create_inventory_checker(api_url):
 def _create_inventory_transform():
     from rewards.transforms.inventory import InventoryStepTransform
     return InventoryStepTransform()
+
+
+def _create_inventory_clone_checker():
+    """
+    Placeholder checker for inventory_clone (in-memory, no external API).
+
+    Since the clone stores data in-memory (no persistent DB), ground truth
+    checking requires a different approach. For now, returns a no-op checker
+    that always passes — the real scoring comes from the OpenEnv transforms.
+    """
+
+    class InMemoryChecker:
+        def check_all(self, checks):
+            return [True] * len(checks)
+
+        def close(self):
+            pass
+
+    return InMemoryChecker()
 
 
 def divider(text: str = ""):

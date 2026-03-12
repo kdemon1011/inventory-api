@@ -1,0 +1,153 @@
+# Docker Deployment
+
+Docker is core to OpenEnv — isolated, reproducible environments that run identically everywhere.
+
+## Why Docker
+
+- **Isolation**: Each gym runs in its own container with its own dependencies
+- **Reproducibility**: Same image → same behavior on any machine
+- **One command**: `docker run -p 9000:9000 openenv-inventory` — everything is running
+- **Security**: The LLM agent interacts only through OpenEnv's API, not directly with the system
+
+## Architecture Patterns
+
+### Single-Process (simple gyms)
+
+For gyms that store data in-memory or don't need a separate backend:
+
+```
+┌─────────────── Docker Container ───────────────┐
+│                                                 │
+│   OpenEnv Server (MCPEnvironment) → port 9000   │
+│   In-memory data store                          │
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
+
+Example: `inventory_clone/`
+
+Dockerfile CMD:
+```dockerfile
+CMD ["sh", "-c", "cd /app/env && uvicorn server.app:app --host 0.0.0.0 --port 9000"]
+```
+
+### Two-Process (real backend gyms)
+
+For gyms that wrap a real API with a database:
+
+```
+┌────────────────────── Docker Container ─────────────────────┐
+│                                                              │
+│   Process 1: Backend API (FastAPI + SQLite)  → port 8000     │
+│   Process 2: OpenEnv Server (MCPEnvironment) → port 9000     │
+│                                                              │
+│   Startup: API starts first, health-checked, then OpenEnv    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Example: `inventory/`
+
+Dockerfile CMD (startup logic inlined):
+```dockerfile
+CMD ["bash", "-c", "cd /app/env && python main.py & \
+    echo 'Waiting for API...' && \
+    for i in $(seq 1 30); do \
+        if curl -sf http://localhost:8000/health > /dev/null 2>&1; then \
+            echo 'API is ready.' && break; \
+        fi; \
+        if [ \"$i\" -eq 30 ]; then echo 'ERROR: API failed to start.' && exit 1; fi; \
+        sleep 1; \
+    done && \
+    echo 'Starting OpenEnv server on port 9000...' && \
+    exec uvicorn server.app:app --host 0.0.0.0 --port 9000"]
+```
+
+## Building
+
+### From the gym directory
+
+```bash
+cd inventory
+docker build -t openenv-inventory -f Dockerfile .
+```
+
+### Using `openenv build` (if available)
+
+```bash
+openenv build inventory/
+```
+
+## Running
+
+```bash
+# Single-process gym
+docker run -d --name inventory_clone -p 9000:9000 openenv-inventory-clone
+
+# Two-process gym (expose both ports)
+docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
+
+# Verify
+curl http://localhost:9000/health
+```
+
+## Evaluating Against Docker
+
+```bash
+# Start the gym
+docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
+
+# Run evaluation
+python run_eval.py --gym inventory --model gpt-4o --save --trajectory
+
+# Stop
+docker stop inventory && docker rm inventory
+```
+
+## Dockerfile Structure
+
+All gym Dockerfiles follow the same multi-stage pattern:
+
+```dockerfile
+# Stage 1: Builder — install dependencies
+ARG BASE_IMAGE=ghcr.io/meta-pytorch/openenv-base:latest
+FROM ${BASE_IMAGE} AS builder
+WORKDIR /app
+COPY . /app/env
+WORKDIR /app/env
+RUN uv sync --frozen --no-editable
+
+# Stage 2: Runtime — copy only what's needed
+FROM ${BASE_IMAGE}
+COPY --from=builder /app/env/.venv /app/.venv
+COPY --from=builder /app/env /app/env
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app/env:$PYTHONPATH"
+EXPOSE 9000
+CMD [...]
+```
+
+- **Builder stage**: Installs all dependencies using `uv sync` with caching
+- **Runtime stage**: Copies the virtual environment and source code, sets up PATH
+- **PYTHONPATH**: Set to `/app/env` so imports work correctly from the gym root
+- **Health check**: Container reports healthy when the OpenEnv server responds
+
+## Running Without Docker (Alternative)
+
+If Docker is not available, you can run gyms locally:
+
+```bash
+# For two-process gyms (e.g., inventory)
+# Terminal 1: Start the backend API
+cd inventory && python main.py
+
+# Terminal 2: Start the OpenEnv server
+cd inventory && uv run server
+
+# For single-process gyms (e.g., inventory_clone)
+cd inventory_clone && uv run server
+```
+
+Then evaluate normally:
+```bash
+python run_eval.py --gym inventory --model gpt-4o
+```
