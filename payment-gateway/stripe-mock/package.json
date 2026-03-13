@@ -1,0 +1,14 @@
+{
+  "name": "stripe-mock",
+  "version": "1.0.0",
+  "description": "Minimal Stripe-like mock service for the Payment Gateway gym",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "axios": "^1.6.0",
+    "uuid": "^9.0.0"
+  }
+}
