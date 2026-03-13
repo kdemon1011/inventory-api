@@ -12,6 +12,7 @@
  *   POST   /v1/refunds                    — Create a refund
  *   POST   /v1/disputes                   — Create a dispute
  *   POST   /v1/disputes/:id/close         — Resolve/close a dispute
+ *   GET    /v1/disputes                   — List all disputes
  *   POST   /v1/transfers                  — Create a transfer/payout
  *   GET    /v1/transfers                  — List transfers
  *   GET    /health                        — Health check
@@ -79,7 +80,7 @@ app.post("/v1/payment_intents/:id/confirm", async (req, res) => {
       .json({ error: { message: `Cannot confirm intent with status '${intent.status}'` } });
   }
 
-  // 90% success, 10% failure (deterministic: amounts ending in 7xx fail)
+  // Deterministic: amounts whose last digit is 7 fail (~10%), rest succeed
   const succeeded = intent.amount % 10 !== 7;
   intent.status = succeeded ? "succeeded" : "failed";
   intent.confirmed_at = Math.floor(Date.now() / 1000);
