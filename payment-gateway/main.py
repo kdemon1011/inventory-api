@@ -78,10 +78,12 @@ async def get_balance(db: AsyncSession = Depends(get_db)):
 
     This is the financial summary of all operations processed through the gateway.
     """
-    # Total successful payments
+    # Total processed payments (money was received). Includes "disputed" and
+    # "refunded" (via dispute loss) because those originally succeeded — the
+    # deductions are tracked via the refunds/disputes tables.
     r = await db.execute(
         select(func.coalesce(func.sum(PaymentIntent.amount), 0))
-        .where(PaymentIntent.status == "succeeded")
+        .where(PaymentIntent.status.in_(["succeeded", "disputed", "refunded"]))
     )
     total_payments = r.scalar()
 

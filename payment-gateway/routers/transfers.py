@@ -2,10 +2,12 @@
 Transfer/payout endpoints — move funds from gateway balance to external accounts.
 """
 
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db
+from database import get_db, get_session_id
 from schemas.transfer import CreateTransferRequest, TransferResponse, TransferListResponse
 from services import transfer_service
 
@@ -13,12 +15,13 @@ router = APIRouter(prefix="/transfers", tags=["transfers"])
 
 
 @router.post("", response_model=TransferResponse, status_code=201)
-async def create_transfer(req: CreateTransferRequest, db: AsyncSession = Depends(get_db)):
+async def create_transfer(req: CreateTransferRequest, db: AsyncSession = Depends(get_db), session_id: Optional[str] = Depends(get_session_id)):
     try:
         transfer = await transfer_service.create_transfer(
             db=db,
             amount=req.amount, destination=req.destination,
             description=req.description,
+            session_id=session_id,
         )
         return transfer
     except ValueError as e:

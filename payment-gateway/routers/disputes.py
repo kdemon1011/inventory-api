@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db
+from database import get_db, get_session_id
 from schemas.dispute import (
     CreateDisputeRequest,
     ResolveDisputeRequest,
@@ -20,12 +20,13 @@ router = APIRouter(prefix="/disputes", tags=["disputes"])
 
 
 @router.post("", response_model=DisputeResponse, status_code=201)
-async def create_dispute(req: CreateDisputeRequest, db: AsyncSession = Depends(get_db)):
+async def create_dispute(req: CreateDisputeRequest, db: AsyncSession = Depends(get_db), session_id: Optional[str] = Depends(get_session_id)):
     try:
         dispute = await dispute_service.create_dispute(
             db=db,
             payment_intent_id=req.payment_intent_id,
             reason=req.reason, amount=req.amount,
+            session_id=session_id,
         )
         return dispute
     except ValueError as e:
@@ -34,13 +35,14 @@ async def create_dispute(req: CreateDisputeRequest, db: AsyncSession = Depends(g
 
 @router.post("/{dispute_id}/resolve", response_model=DisputeResponse)
 async def resolve_dispute(
-    dispute_id: int, req: ResolveDisputeRequest, db: AsyncSession = Depends(get_db)
+    dispute_id: int, req: ResolveDisputeRequest, db: AsyncSession = Depends(get_db), session_id: Optional[str] = Depends(get_session_id)
 ):
     try:
         dispute = await dispute_service.resolve_dispute(
             db=db,
             dispute_id=dispute_id,
             evidence=req.evidence, accept_loss=req.accept_loss,
+            session_id=session_id,
         )
         return dispute
     except ValueError as e:

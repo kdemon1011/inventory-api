@@ -10,7 +10,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db
+from database import get_db, get_session_id
 from schemas.payment import CreatePaymentRequest, PaymentResponse, PaymentListResponse
 from services import payment_service
 
@@ -29,9 +29,9 @@ async def create_payment(req: CreatePaymentRequest, db: AsyncSession = Depends(g
 
 
 @router.post("/{payment_id}/confirm", response_model=PaymentResponse)
-async def confirm_payment(payment_id: int, db: AsyncSession = Depends(get_db)):
+async def confirm_payment(payment_id: int, db: AsyncSession = Depends(get_db), session_id: Optional[str] = Depends(get_session_id)):
     try:
-        payment = await payment_service.confirm_payment(db=db, payment_id=payment_id)
+        payment = await payment_service.confirm_payment(db=db, payment_id=payment_id, session_id=session_id)
         return payment
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

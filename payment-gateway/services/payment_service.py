@@ -6,7 +6,6 @@ Keeps local DB records in sync with Stripe mock responses.
 """
 
 import json
-import logging
 from typing import Optional
 
 from sqlalchemy import select
@@ -14,8 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.payment import PaymentIntent
 from services.stripe_client import stripe_client
-
-logger = logging.getLogger(__name__)
 
 
 async def create_payment(
@@ -52,6 +49,7 @@ async def create_payment(
 async def confirm_payment(
     db: AsyncSession,
     payment_id: int,
+    session_id: Optional[str] = None,
 ) -> PaymentIntent:
     """Confirm a payment intent via the Stripe mock and update local status."""
     payment = await db.get(PaymentIntent, payment_id)
@@ -60,7 +58,7 @@ async def confirm_payment(
     if payment.status not in ("requires_confirmation", "requires_action"):
         raise ValueError(f"Payment {payment_id} cannot be confirmed (status: {payment.status})")
 
-    stripe_resp = await stripe_client.confirm_payment_intent(payment.stripe_payment_intent_id)
+    stripe_resp = await stripe_client.confirm_payment_intent(payment.stripe_payment_intent_id, session_id=session_id)
     payment.status = stripe_resp.get("status", "failed")
     await db.flush()
     await db.refresh(payment)

@@ -6,7 +6,6 @@ When a dispute is lost, the disputed amount is effectively deducted from
 the merchant's balance (similar to a forced refund).
 """
 
-import logging
 from datetime import datetime
 from typing import Optional
 
@@ -17,14 +16,13 @@ from models.dispute import Dispute
 from models.payment import PaymentIntent
 from services.stripe_client import stripe_client
 
-logger = logging.getLogger(__name__)
-
 
 async def create_dispute(
     db: AsyncSession,
     payment_intent_id: int,
     reason: str,
     amount: Optional[float] = None,
+    session_id: Optional[str] = None,
 ) -> Dispute:
     """Open a dispute/chargeback against a succeeded payment."""
     payment = await db.get(PaymentIntent, payment_intent_id)
@@ -40,6 +38,7 @@ async def create_dispute(
         stripe_pi_id=payment.stripe_payment_intent_id,
         amount=dispute_amount,
         reason=reason,
+        session_id=session_id,
     )
 
     dispute = Dispute(
@@ -65,6 +64,7 @@ async def resolve_dispute(
     dispute_id: int,
     evidence: str,
     accept_loss: bool = False,
+    session_id: Optional[str] = None,
 ) -> Dispute:
     """Submit evidence and resolve a dispute."""
     dispute = await db.get(Dispute, dispute_id)
@@ -80,16 +80,19 @@ async def resolve_dispute(
         stripe_dispute_id=dispute.stripe_dispute_id,
         evidence=evidence,
         accept_loss=accept_loss,
+        session_id=session_id,
     )
 
     dispute.status = stripe_resp.get("status", "lost" if accept_loss else "won")
     dispute.resolved_at = datetime.utcnow()
 
-    # If lost, update the payment status
-    if dispute.status == "lost":
-        payment = await db.get(PaymentIntent, dispute.payment_intent_id)
-        if payment:
+    # Update payment status based on dispute outcome
+    payment = await db.get(PaymentIntent, dispute.payment_intent_id)
+    if payment:
+        if dispute.status == "lost":
             payment.status = "refunded"  # Dispute lost = forced refund
+        elif dispute.status == "won":
+            payment.status = "succeeded"  # Dispute won = merchant keeps money
 
     await db.flush()
     await db.refresh(dispute)

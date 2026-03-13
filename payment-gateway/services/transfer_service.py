@@ -6,7 +6,6 @@ creating a transfer. Available balance = succeeded payments
 - succeeded refunds - lost disputes - completed transfers.
 """
 
-import logging
 from typing import Optional
 
 from sqlalchemy import func, select
@@ -18,15 +17,13 @@ from models.refund import Refund
 from models.transfer import Transfer
 from services.stripe_client import stripe_client
 
-logger = logging.getLogger(__name__)
-
 
 async def _get_available_balance(db: AsyncSession) -> float:
     """Calculate the available balance for transfers."""
-    # Total successful payments
+    # Total processed payments (succeeded, disputed, or refunded-via-dispute)
     r = await db.execute(
         select(func.coalesce(func.sum(PaymentIntent.amount), 0))
-        .where(PaymentIntent.status == "succeeded")
+        .where(PaymentIntent.status.in_(["succeeded", "disputed", "refunded"]))
     )
     total_payments = r.scalar()
 
@@ -59,6 +56,7 @@ async def create_transfer(
     amount: float,
     destination: str,
     description: Optional[str] = None,
+    session_id: Optional[str] = None,
 ) -> Transfer:
     """Create a transfer/payout from the gateway balance."""
     available = await _get_available_balance(db)
@@ -69,7 +67,7 @@ async def create_transfer(
 
     # Call Stripe mock
     stripe_resp = await stripe_client.create_transfer(
-        amount=amount, destination=destination, description=description,
+        amount=amount, destination=destination, description=description, session_id=session_id,
     )
 
     transfer = Transfer(

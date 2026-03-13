@@ -5,7 +5,6 @@ Handles full and partial refunds, validating that the refund amount
 doesn't exceed the original payment minus already-refunded amounts.
 """
 
-import logging
 from typing import Optional
 
 from sqlalchemy import func, select
@@ -15,14 +14,13 @@ from models.payment import PaymentIntent
 from models.refund import Refund
 from services.stripe_client import stripe_client
 
-logger = logging.getLogger(__name__)
-
 
 async def create_refund(
     db: AsyncSession,
     payment_intent_id: int,
     amount: Optional[float] = None,
     reason: Optional[str] = None,
+    session_id: Optional[str] = None,
 ) -> Refund:
     """Create a refund against a completed payment."""
     payment = await db.get(PaymentIntent, payment_intent_id)
@@ -54,6 +52,7 @@ async def create_refund(
     stripe_resp = await stripe_client.create_refund(
         stripe_pi_id=payment.stripe_payment_intent_id,
         amount=refund_amount,
+        session_id=session_id,
     )
 
     refund = Refund(

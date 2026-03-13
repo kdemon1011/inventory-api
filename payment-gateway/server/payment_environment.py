@@ -1,12 +1,13 @@
 """
 Payment Gateway Environment — built on OpenEnv's MCPEnvironment.
 
-Exposes 18 MCP tools covering the full payment lifecycle:
-  - Customer management (create, get, list, update)
-  - Payment intents (create, confirm, get, list, retry)
-  - Refunds (create, list)
-  - Disputes (create, resolve, list)
-  - Transfers (create, list)
+Exposes 19 MCP tools covering the full payment lifecycle:
+  - Infrastructure: get_session_info
+  - Customer management: create, get, list, update
+  - Payment intents: create, confirm, get, list, retry
+  - Refunds: create, list
+  - Disputes: create, resolve, list
+  - Transfers: create, list
   - Balance and webhook inspection
 
 Architecture:
@@ -36,7 +37,7 @@ class PaymentEnvironment(MCPEnvironment):
     """
     OpenEnv environment for the Payment Gateway.
 
-    18 MCP tools for the full payment lifecycle — customers, payments,
+    19 MCP tools for the full payment lifecycle — customers, payments,
     refunds, disputes, transfers, balance, and webhooks.
     """
 
@@ -491,7 +492,7 @@ class PaymentEnvironment(MCPEnvironment):
         return EnvironmentMetadata(
             name="payment_gateway",
             description=(
-                "Payment Gateway — 18 MCP tools for the full payment lifecycle: "
+                "Payment Gateway — 19 MCP tools for the full payment lifecycle: "
                 "customer management, payment processing, refunds, disputes/chargebacks, "
                 "transfers/payouts, balance tracking, and webhook auditing. "
                 "Integrates with a Stripe-like mock service (Node.js). "

@@ -1,6 +1,6 @@
 # Payment Gateway Gym
 
-A Stripe-like payment processing environment for OpenEnv. The agent interacts with 18 MCP tools covering the full payment lifecycle: customer management, payment processing, refunds, disputes/chargebacks, transfers/payouts, balance tracking, and webhook auditing.
+A Stripe-like payment processing environment for OpenEnv. The agent interacts with 19 MCP tools covering the full payment lifecycle: customer management, payment processing, refunds, disputes/chargebacks, transfers/payouts, balance tracking, and webhook auditing.
 
 ## Architecture
 
@@ -55,7 +55,7 @@ A Stripe-like payment processing environment for OpenEnv. The agent interacts wi
 | GET | `/sessions` | List active sessions |
 | DELETE | `/sessions/{id}` | Delete session |
 
-## Available MCP Tools (18)
+## Available MCP Tools (19)
 
 | # | Tool | Category | Description |
 |---|------|----------|-------------|
@@ -77,7 +77,7 @@ A Stripe-like payment processing environment for OpenEnv. The agent interacts wi
 | 16 | `create_transfer` | Transfers | Transfer funds from balance |
 | 17 | `list_transfers` | Transfers | List all transfers |
 | 18 | `get_balance` | Balance | Get balance (payments - refunds - disputes - transfers) |
-| — | `list_webhooks` | Webhooks | List received webhook events |
+| 19 | `list_webhooks` | Webhooks | List received webhook events |
 
 ## Running
 

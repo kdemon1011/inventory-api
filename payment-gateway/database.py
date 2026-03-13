@@ -35,6 +35,11 @@ class Base(DeclarativeBase):
     pass
 
 
+async def get_session_id(x_session_id: Optional[str] = Header(None, alias="X-Session-ID")) -> Optional[str]:
+    """FastAPI dependency — extracts the X-Session-ID header value."""
+    return x_session_id
+
+
 async def get_db(x_session_id: Optional[str] = Header(None, alias="X-Session-ID")):
     """
     FastAPI dependency — returns the appropriate DB session.
