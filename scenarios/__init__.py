@@ -1,3 +1,4 @@
 from .inventory import INVENTORY_SCENARIOS
+from .payment_gateway import PAYMENT_GATEWAY_SCENARIOS
 
-__all__ = ["INVENTORY_SCENARIOS"]
+__all__ = ["INVENTORY_SCENARIOS", "PAYMENT_GATEWAY_SCENARIOS"]
