@@ -17,7 +17,7 @@ Supports two execution modes:
   - Parallel (--parallel N): run N models simultaneously, each with isolated DB sessions
 
 Prerequisites:
-    1. Install the gym:  pip install -e inventory/
+    1. Install the gym:  pip install -e inventory/   (or browser/, payment_gateway/, etc.)
     2. Start the gym:    docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
     3. Run evaluation:   python run_eval.py --gym inventory --model gpt-4o
 
@@ -27,6 +27,10 @@ Usage:
 
     # Parallel (multiple models, comma-separated)
     python run_eval.py --gym inventory --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6 --parallel 3 --save --trajectory
+
+    # Browser gym (Node.js + React e-commerce app)
+    python run_eval.py --gym browser --model gpt-5.4 --save --trajectory
+    python run_eval.py --gym browser --model gpt-5.4,claude-sonnet-4-6,claude-opus-4-6 --parallel 3 --reward-mode openenv
 
     # More examples
     python run_eval.py --gym inventory --model gpt-4o --reward-mode openenv
@@ -85,12 +89,12 @@ GYM_REGISTRY = {
     #     "transform_factory": lambda: _create_payment_transform(),
     #     "default_api_url": "http://localhost:8002",
     # },
-    # "browser": {
-    #     "scenarios_loader": lambda: _load_browser_scenarios(),
-    #     "checker_factory": lambda api_url, session_id=None: _create_browser_checker(api_url, session_id),
-    #     "transform_factory": lambda: _create_browser_transform(),
-    #     "default_api_url": "http://localhost:8003",
-    # },
+    "browser": {
+        "scenarios_loader": lambda: _load_browser_scenarios(),
+        "checker_factory": lambda api_url, session_id=None: _create_browser_checker(api_url, session_id),
+        "transform_factory": lambda: _create_browser_transform(),
+        "default_api_url": "http://localhost:8003",
+    },
     # "code_judge": {
     #     "scenarios_loader": lambda: _load_code_judge_scenarios(),
     #     "checker_factory": lambda api_url, session_id=None: _create_code_judge_checker(api_url, session_id),
@@ -142,6 +146,20 @@ def _create_inventory_transform():
     from rewards.transforms.inventory import InventoryStepTransform
     return InventoryStepTransform()
 
+
+def _load_browser_scenarios():
+    from scenarios.browser import BROWSER_SCENARIOS
+    return BROWSER_SCENARIOS
+
+
+def _create_browser_checker(api_url, session_id=None):
+    from rewards.browser_checks import BrowserChecker
+    return BrowserChecker(api_url=api_url, session_id=session_id)
+
+
+def _create_browser_transform():
+    from rewards.transforms.browser import BrowserStepTransform
+    return BrowserStepTransform()
 
 
 def _fetch_gym_metadata(base_url: str) -> dict | None:
@@ -559,11 +577,16 @@ def main():
         epilog="""
 Prerequisites:
   pip install -e inventory/          # install gym for AutoEnv discovery
+  pip install -e browser/            # install browser gym
 
 Examples:
-  # Sequential (one model)
+  # Inventory gym
   python run_eval.py --gym inventory --model gpt-4o
   python run_eval.py --gym inventory --model gpt-4o --reward-mode openenv
+
+  # Browser gym (Node.js + React e-commerce app)
+  python run_eval.py --gym browser --model gpt-5.4 --save --trajectory
+  python run_eval.py --gym browser --model gpt-5.4,claude-sonnet-4-6,claude-opus-4-6 --parallel 3
 
   # Parallel (multiple models)
   python run_eval.py --gym inventory --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6 --parallel 3

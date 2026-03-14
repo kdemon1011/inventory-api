@@ -58,6 +58,73 @@ app.delete("/api/sessions/:id", (req, res) => {
   res.json({ session_id: req.params.id, deleted: true });
 });
 
+// ── Internal verification endpoints (used by reward checker, NOT by agents) ──
+// These query the DB directly without auth, enabling ground truth checks.
+
+app.get("/api/internal/user", (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ error: "email required" });
+  const user = req.db.prepare(
+    "SELECT id, name, email, address, created_at FROM users WHERE email = ?"
+  ).get(email);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json(user);
+});
+
+app.get("/api/internal/orders", (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ error: "email required" });
+  const user = req.db.prepare("SELECT id FROM users WHERE email = ?").get(email);
+  if (!user) return res.json({ orders: [] });
+  const orders = req.db.prepare(
+    "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC"
+  ).all(user.id);
+  // Attach items to each order
+  const stmtItems = req.db.prepare("SELECT * FROM order_items WHERE order_id = ?");
+  const result = orders.map(o => ({ ...o, items: stmtItems.all(o.id) }));
+  res.json({ orders: result });
+});
+
+app.get("/api/internal/cart", (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ error: "email required" });
+  const user = req.db.prepare("SELECT id FROM users WHERE email = ?").get(email);
+  if (!user) return res.json({ items: [], count: 0 });
+  const items = req.db.prepare(
+    "SELECT ci.*, p.name, p.price FROM cart_items ci JOIN products p ON ci.product_id = p.id WHERE ci.user_id = ?"
+  ).all(user.id);
+  res.json({ items, count: items.length });
+});
+
+app.get("/api/internal/wishlist", (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ error: "email required" });
+  const user = req.db.prepare("SELECT id FROM users WHERE email = ?").get(email);
+  if (!user) return res.json({ items: [], count: 0 });
+  const items = req.db.prepare(
+    "SELECT w.*, p.name, p.price FROM wishlist_items w JOIN products p ON w.product_id = p.id WHERE w.user_id = ?"
+  ).all(user.id);
+  res.json({ items, count: items.length });
+});
+
+app.get("/api/internal/reviews", (req, res) => {
+  const { email, product_id } = req.query;
+  if (!email) return res.status(400).json({ error: "email required" });
+  const user = req.db.prepare("SELECT id FROM users WHERE email = ?").get(email);
+  if (!user) return res.json({ reviews: [] });
+  let sql = "SELECT * FROM reviews WHERE user_id = ?";
+  const params = [user.id];
+  if (product_id) { sql += " AND product_id = ?"; params.push(product_id); }
+  res.json({ reviews: req.db.prepare(sql).all(...params) });
+});
+
+app.get("/api/internal/contacts", (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ error: "email required" });
+  const contacts = req.db.prepare("SELECT * FROM contacts WHERE email = ?").all(email);
+  res.json({ contacts });
+});
+
 // ── API routes ──
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/products", require("./routes/products"));
