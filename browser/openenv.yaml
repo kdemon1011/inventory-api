@@ -1,0 +1,10 @@
+# OpenEnv Environment Manifest
+# AutoEnv discovery reads this file to auto-connect clients.
+
+spec_version: 1
+name: browser_gym
+description: "Browser Gym — navigate, interact, and assert on a web application via browser-like MCP tools"
+type: space
+runtime: fastapi
+app: server.app:app
+port: 9003
