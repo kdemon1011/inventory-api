@@ -1,0 +1,4207 @@
+{
+  "run_id": "run_pg_custom_final",
+  "model": "gpt-5.4",
+  "gym": "payment_gateway",
+  "gym_version": "0.1.0",
+  "timestamp": "2026-03-14T00:10:10.699820+05:30",
+  "temperature": 0.0,
+  "reward_mode": "custom",
+  "total_elapsed_s": 157.94,
+  "total_scenarios": 12,
+  "scenarios": [
+    {
+      "scenario_id": "cascading_payment_failure_recovery",
+      "prompt": "A new customer named 'Dana Chen' needs to be onboarded with email 'sc1-dana@test.com'. Once registered, process a payment of exactly $100.07 USD for this customer and attempt to confirm it. After confirmation, inspect the payment status \u2014 if the payment failed during processing, retry the payment using an amount of $100.00 USD instead. Verify the retry succeeded, then confirm that the account balance reflects exactly one successful payment of $100.00. Also check that both a failure and a success webhook were delivered.",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "get_payment",
+        "retry_payment",
+        "get_balance",
+        "list_webhooks"
+      ],
+      "max_steps": 12,
+      "elapsed_s": 15.55,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:07:39.980683+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc1-dana@test.com",
+            "name": "Dana Chen"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc1-dana@test.com",
+            "name": "Dana Chen",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:37:39.990943",
+            "updated_at": "2026-03-13T18:37:39.990945"
+          },
+          "error": null,
+          "elapsed_s": 0.02
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:07:41.038405+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 10007,
+            "currency": "usd",
+            "customer_email": "sc1-dana@test.com",
+            "description": "Initial payment for Dana Chen"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_ef913904e46647998fc4c550",
+            "amount": 10007.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc1-dana@test.com",
+            "description": "Initial payment for Dana Chen",
+            "created_at": "2026-03-13T18:37:41.092072",
+            "updated_at": "2026-03-13T18:37:41.092076"
+          },
+          "error": null,
+          "elapsed_s": 0.064
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:07:42.069368+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_ef913904e46647998fc4c550",
+            "amount": 10007.0,
+            "currency": "usd",
+            "status": "failed",
+            "customer_email": "sc1-dana@test.com",
+            "description": "Initial payment for Dana Chen",
+            "created_at": "2026-03-13T18:37:41.092072",
+            "updated_at": "2026-03-13T18:37:42.100489"
+          },
+          "error": null,
+          "elapsed_s": 0.047
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:07:43.631758+05:30",
+          "tool_name": "retry_payment",
+          "arguments": {
+            "payment_id": 1,
+            "amount": 10000,
+            "description": "Retry payment for Dana Chen at $100.00"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_payment_intent_id": "pi_b859e96e61c446d5b65f59c9",
+            "amount": 10000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc1-dana@test.com",
+            "description": "Retry payment for Dana Chen at $100.00",
+            "created_at": "2026-03-13T18:37:43.648327",
+            "updated_at": "2026-03-13T18:37:43.665073"
+          },
+          "error": null,
+          "elapsed_s": 0.043
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:07:45.252316+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 10000.0,
+            "total_payments": 10000.0,
+            "total_refunds": 0,
+            "total_disputes_lost": 0,
+            "total_transfers": 0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:07:45.270894+05:30",
+          "tool_name": "list_webhooks",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "events": [
+              {
+                "id": 2,
+                "stripe_event_id": "evt_d39fd2da524641bc8881caef",
+                "event_type": "payment_intent.succeeded",
+                "payload": "{\"id\": \"pi_b859e96e61c446d5b65f59c9\", \"object\": \"payment_intent\", \"amount\": 10000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc1-dana@test.com\", \"description\": \"Retry payment for Dana Chen at $100.00\", \"metadata\": {}, \"created\": 1773427063, \"confirmed_at\": 1773427063}",
+                "processed": true,
+                "created_at": "2026-03-13T18:37:43.666198"
+              },
+              {
+                "id": 1,
+                "stripe_event_id": "evt_6831fb16293446f682d4eeb8",
+                "event_type": "payment_intent.payment_failed",
+                "payload": "{\"id\": \"pi_ef913904e46647998fc4c550\", \"object\": \"payment_intent\", \"amount\": 10007, \"currency\": \"usd\", \"status\": \"failed\", \"customer_email\": \"sc1-dana@test.com\", \"description\": \"Initial payment for Dana Chen\", \"metadata\": {}, \"created\": 1773427061, \"confirmed_at\": 1773427062}",
+                "processed": true,
+                "created_at": "2026-03-13T18:37:42.106037"
+              }
+            ],
+            "count": 2
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        }
+      ],
+      "total_steps": 6,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc1-dana@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "payment_status",
+            "customer_email": "sc1-dana@test.com",
+            "status": "failed"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "payment_status",
+            "customer_email": "sc1-dana@test.com",
+            "status": "succeeded"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 10000
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "payment_intent.payment_failed"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "payment_intent.succeeded"
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.9538,
+        "ground_truth": 1.0,
+        "efficiency": 1.0,
+        "penalty": 0.0,
+        "total": 0.9885
+      }
+    },
+    {
+      "scenario_id": "multi_customer_ledger_reconciliation",
+      "prompt": "Set up three customers and process their payments:\n  \u2022 'Alice Park' (sc2-alice@test.com) \u2014 $150.00 payment\n  \u2022 'Bob Lee' (sc2-bob@test.com) \u2014 $250.00 payment\n  \u2022 'Carol Ng' (sc2-carol@test.com) \u2014 $350.00 payment\n\nConfirm all three payments. Then apply these adjustments:\n  1. Partial refund of $75.00 from Alice's payment\n  2. Full refund of Bob's entire $250.00 payment\n  3. Open a dispute on Carol's payment for $100.00 (reason: 'product_not_received') and fight it with evidence: 'Delivery confirmed \u2014 tracking #CP-887291 signed at door'\n\nAfter all adjustments, verify the total account balance and audit the webhook trail to confirm all events were recorded.",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "create_refund",
+        "create_dispute",
+        "resolve_dispute",
+        "get_balance",
+        "list_webhooks"
+      ],
+      "max_steps": 20,
+      "elapsed_s": 15.63,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:07:50.006963+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc2-alice@test.com",
+            "name": "Alice Park"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc2-alice@test.com",
+            "name": "Alice Park",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:37:50.016077",
+            "updated_at": "2026-03-13T18:37:50.016081"
+          },
+          "error": null,
+          "elapsed_s": 0.021
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:07:50.028080+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc2-bob@test.com",
+            "name": "Bob Lee"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "email": "sc2-bob@test.com",
+            "name": "Bob Lee",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:37:50.035846",
+            "updated_at": "2026-03-13T18:37:50.035849"
+          },
+          "error": null,
+          "elapsed_s": 0.019
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:07:50.046877+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc2-carol@test.com",
+            "name": "Carol Ng"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "email": "sc2-carol@test.com",
+            "name": "Carol Ng",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:37:50.053988",
+            "updated_at": "2026-03-13T18:37:50.053992"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:07:51.984300+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 15000,
+            "currency": "usd",
+            "customer_email": "sc2-alice@test.com",
+            "description": "Payment for Alice Park"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_c7df62bfdd01485eabd6c963",
+            "amount": 15000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc2-alice@test.com",
+            "description": "Payment for Alice Park",
+            "created_at": "2026-03-13T18:37:51.992553",
+            "updated_at": "2026-03-13T18:37:51.992556"
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:07:52.001641+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 25000,
+            "currency": "usd",
+            "customer_email": "sc2-bob@test.com",
+            "description": "Payment for Bob Lee"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_payment_intent_id": "pi_c20deb712b524d8180122040",
+            "amount": 25000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc2-bob@test.com",
+            "description": "Payment for Bob Lee",
+            "created_at": "2026-03-13T18:37:52.009764",
+            "updated_at": "2026-03-13T18:37:52.009766"
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:07:52.018268+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 35000,
+            "currency": "usd",
+            "customer_email": "sc2-carol@test.com",
+            "description": "Payment for Carol Ng"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "stripe_payment_intent_id": "pi_b7fa958003ee4a84b3116b80",
+            "amount": 35000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc2-carol@test.com",
+            "description": "Payment for Carol Ng",
+            "created_at": "2026-03-13T18:37:52.025869",
+            "updated_at": "2026-03-13T18:37:52.025872"
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-14T00:07:53.865202+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_c7df62bfdd01485eabd6c963",
+            "amount": 15000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc2-alice@test.com",
+            "description": "Payment for Alice Park",
+            "created_at": "2026-03-13T18:37:51.992553",
+            "updated_at": "2026-03-13T18:37:53.877852"
+          },
+          "error": null,
+          "elapsed_s": 0.024
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-14T00:07:53.889808+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 2
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_payment_intent_id": "pi_c20deb712b524d8180122040",
+            "amount": 25000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc2-bob@test.com",
+            "description": "Payment for Bob Lee",
+            "created_at": "2026-03-13T18:37:52.009764",
+            "updated_at": "2026-03-13T18:37:53.903411"
+          },
+          "error": null,
+          "elapsed_s": 0.026
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-14T00:07:53.915593+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 3
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "stripe_payment_intent_id": "pi_b7fa958003ee4a84b3116b80",
+            "amount": 35000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc2-carol@test.com",
+            "description": "Payment for Carol Ng",
+            "created_at": "2026-03-13T18:37:52.025869",
+            "updated_at": "2026-03-13T18:37:53.935748"
+          },
+          "error": null,
+          "elapsed_s": 0.032
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-14T00:07:55.680434+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 1,
+            "amount": 7500,
+            "reason": "Partial refund requested"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_refund_id": "re_f931e23e90d947bd994389d1",
+            "amount": 7500.0,
+            "status": "succeeded",
+            "reason": "Partial refund requested",
+            "created_at": "2026-03-13T18:37:55.696762"
+          },
+          "error": null,
+          "elapsed_s": 0.027
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-14T00:07:55.708156+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 2,
+            "amount": 25000,
+            "reason": "Full refund requested"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "payment_intent_id": 2,
+            "stripe_refund_id": "re_ce69dbebe5234900ac118b71",
+            "amount": 25000.0,
+            "status": "succeeded",
+            "reason": "Full refund requested",
+            "created_at": "2026-03-13T18:37:55.720814"
+          },
+          "error": null,
+          "elapsed_s": 0.023
+        },
+        {
+          "step": 12,
+          "timestamp": "2026-03-14T00:07:55.731416+05:30",
+          "tool_name": "create_dispute",
+          "arguments": {
+            "payment_intent_id": 3,
+            "reason": "product_not_received",
+            "amount": 10000
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 3,
+            "stripe_dispute_id": "dp_37684a196c7b4f059eb57943",
+            "amount": 10000.0,
+            "currency": "usd",
+            "status": "open",
+            "reason": "product_not_received",
+            "evidence": null,
+            "created_at": "2026-03-13T18:37:55.745218",
+            "resolved_at": null
+          },
+          "error": null,
+          "elapsed_s": 0.025
+        },
+        {
+          "step": 13,
+          "timestamp": "2026-03-14T00:07:57.485987+05:30",
+          "tool_name": "resolve_dispute",
+          "arguments": {
+            "dispute_id": 1,
+            "evidence": "Delivery confirmed \u2014 tracking #CP-887291 signed at door",
+            "accept_loss": false
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 3,
+            "stripe_dispute_id": "dp_37684a196c7b4f059eb57943",
+            "amount": 10000.0,
+            "currency": "usd",
+            "status": "won",
+            "reason": "product_not_received",
+            "evidence": "Delivery confirmed \u2014 tracking #CP-887291 signed at door",
+            "created_at": "2026-03-13T18:37:55.745218",
+            "resolved_at": "2026-03-13T18:37:57.496959"
+          },
+          "error": null,
+          "elapsed_s": 0.033
+        },
+        {
+          "step": 14,
+          "timestamp": "2026-03-14T00:07:59.169919+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 42500.0,
+            "total_payments": 75000.0,
+            "total_refunds": 32500.0,
+            "total_disputes_lost": 0,
+            "total_transfers": 0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 15,
+          "timestamp": "2026-03-14T00:07:59.187824+05:30",
+          "tool_name": "list_webhooks",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "events": [
+              {
+                "id": 7,
+                "stripe_event_id": "evt_bdc0b64eaa6c4f2fabf3fed9",
+                "event_type": "charge.dispute.won",
+                "payload": "{\"id\": \"dp_37684a196c7b4f059eb57943\", \"object\": \"dispute\", \"amount\": 10000, \"currency\": \"usd\", \"payment_intent\": \"pi_b7fa958003ee4a84b3116b80\", \"reason\": \"product_not_received\", \"status\": \"won\", \"evidence\": \"Delivery confirmed \\u2014 tracking #CP-887291 signed at door\", \"created\": 1773427075, \"resolved_at\": 1773427077}",
+                "processed": true,
+                "created_at": "2026-03-13T18:37:57.499575"
+              },
+              {
+                "id": 6,
+                "stripe_event_id": "evt_03a11945ceb34c4fac0bdea9",
+                "event_type": "charge.dispute.created",
+                "payload": "{\"id\": \"dp_37684a196c7b4f059eb57943\", \"object\": \"dispute\", \"amount\": 10000, \"currency\": \"usd\", \"payment_intent\": \"pi_b7fa958003ee4a84b3116b80\", \"reason\": \"product_not_received\", \"status\": \"open\", \"evidence\": null, \"created\": 1773427075, \"payment_intent_data\": {\"id\": \"pi_b7fa958003ee4a84b3116b80\", \"object\": \"payment_intent\", \"amount\": 35000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc2-carol@test.com\", \"description\": \"Payment for Carol Ng\", \"metadata\": {}, \"created\": 1773427072, \"confirmed_at\": 1773427073}}",
+                "processed": true,
+                "created_at": "2026-03-13T18:37:55.746260"
+              },
+              {
+                "id": 5,
+                "stripe_event_id": "evt_0362296fdb2c4661853e6e34",
+                "event_type": "charge.refunded",
+                "payload": "{\"id\": \"re_ce69dbebe5234900ac118b71\", \"object\": \"refund\", \"amount\": 25000, \"currency\": \"usd\", \"payment_intent\": \"pi_c20deb712b524d8180122040\", \"status\": \"succeeded\", \"created\": 1773427075, \"payment_intent_data\": {\"id\": \"pi_c20deb712b524d8180122040\", \"object\": \"payment_intent\", \"amount\": 25000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc2-bob@test.com\", \"description\": \"Payment for Bob Lee\", \"metadata\": {}, \"created\": 1773427072, \"confirmed_at\": 1773427073}}",
+                "processed": true,
+                "created_at": "2026-03-13T18:37:55.722256"
+              },
+              {
+                "id": 4,
+                "stripe_event_id": "evt_86e9907e2ba54443b08b262e",
+                "event_type": "charge.refunded",
+                "payload": "{\"id\": \"re_f931e23e90d947bd994389d1\", \"object\": \"refund\", \"amount\": 7500, \"currency\": \"usd\", \"payment_intent\": \"pi_c7df62bfdd01485eabd6c963\", \"status\": \"succeeded\", \"created\": 1773427075, \"payment_intent_data\": {\"id\": \"pi_c7df62bfdd01485eabd6c963\", \"object\": \"payment_intent\", \"amount\": 15000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc2-alice@test.com\", \"description\": \"Payment for Alice Park\", \"metadata\": {}, \"created\": 1773427071, \"confirmed_at\": 1773427073}}",
+                "processed": true,
+                "created_at": "2026-03-13T18:37:55.698179"
+              },
+              {
+                "id": 3,
+                "stripe_event_id": "evt_3f4d85b6302f4d278cfe05ed",
+                "event_type": "payment_intent.succeeded",
+                "payload": "{\"id\": \"pi_b7fa958003ee4a84b3116b80\", \"object\": \"payment_intent\", \"amount\": 35000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc2-carol@test.com\", \"description\": \"Payment for Carol Ng\", \"metadata\": {}, \"created\": 1773427072, \"confirmed_at\": 1773427073}",
+                "processed": true,
+                "created_at": "2026-03-13T18:37:53.936995"
+              },
+              {
+                "id": 2,
+                "stripe_event_id": "evt_625640f3645b49a3ad7f9315",
+                "event_type": "payment_intent.succeeded",
+                "payload": "{\"id\": \"pi_c20deb712b524d8180122040\", \"object\": \"payment_intent\", \"amount\": 25000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc2-bob@test.com\", \"description\": \"Payment for Bob Lee\", \"metadata\": {}, \"created\": 1773427072, \"confirmed_at\": 1773427073}",
+                "processed": true,
+                "created_at": "2026-03-13T18:37:53.907359"
+              },
+              {
+                "id": 1,
+                "stripe_event_id": "evt_5b5b46e629204af2a556c4dc",
+                "event_type": "payment_intent.succeeded",
+                "payload": "{\"id\": \"pi_c7df62bfdd01485eabd6c963\", \"object\": \"payment_intent\", \"amount\": 15000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc2-alice@test.com\", \"description\": \"Payment for Alice Park\", \"metadata\": {}, \"created\": 1773427071, \"confirmed_at\": 1773427073}",
+                "processed": true,
+                "created_at": "2026-03-13T18:37:53.881001"
+              }
+            ],
+            "count": 7
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        }
+      ],
+      "total_steps": 15,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc2-alice@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc2-bob@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc2-carol@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "dispute_status",
+            "customer_email": "sc2-carol@test.com",
+            "status": "won"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 42500
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "payment_intent.succeeded"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "charge.refunded"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_count_gte",
+            "count": 5
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 0.5333,
+        "penalty": 0.0,
+        "total": 0.93
+      }
+    },
+    {
+      "scenario_id": "insufficient_balance_transfer_detection",
+      "prompt": "Register customer 'Eva Ruiz' (sc3-eva@test.com) and process a $200.00 USD payment. Confirm the payment, then issue a $150.00 refund. Now attempt to transfer $100.00 to destination account 'acct_vendor_99'. The transfer will be rejected for insufficient funds \u2014 only $50.00 remains in the balance. Handle the error and transfer the correct remaining amount of $50.00 to the same vendor account. Confirm the final balance is exactly $0.00.",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "create_refund",
+        "create_transfer",
+        "get_balance"
+      ],
+      "max_steps": 12,
+      "elapsed_s": 9.35,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:08:05.137749+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc3-eva@test.com",
+            "name": "Eva Ruiz"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc3-eva@test.com",
+            "name": "Eva Ruiz",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:38:05.146400",
+            "updated_at": "2026-03-13T18:38:05.146402"
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:08:06.374469+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 20000,
+            "currency": "usd",
+            "customer_email": "sc3-eva@test.com",
+            "description": "Payment for Eva Ruiz"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_608410d632564e12913d0958",
+            "amount": 20000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc3-eva@test.com",
+            "description": "Payment for Eva Ruiz",
+            "created_at": "2026-03-13T18:38:06.384047",
+            "updated_at": "2026-03-13T18:38:06.384050"
+          },
+          "error": null,
+          "elapsed_s": 0.02
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:08:07.258857+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_608410d632564e12913d0958",
+            "amount": 20000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc3-eva@test.com",
+            "description": "Payment for Eva Ruiz",
+            "created_at": "2026-03-13T18:38:06.384047",
+            "updated_at": "2026-03-13T18:38:07.270856"
+          },
+          "error": null,
+          "elapsed_s": 0.024
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:08:08.357206+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 1,
+            "amount": 15000,
+            "reason": "Requested partial refund"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_refund_id": "re_93d34ab6351e4bba870832bc",
+            "amount": 15000.0,
+            "status": "succeeded",
+            "reason": "Requested partial refund",
+            "created_at": "2026-03-13T18:38:08.370689"
+          },
+          "error": null,
+          "elapsed_s": 0.031
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:08:09.388237+05:30",
+          "tool_name": "create_transfer",
+          "arguments": {
+            "amount": 10000,
+            "destination": "acct_vendor_99",
+            "description": "Vendor payout attempt"
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_transfer': Client error '400 Bad Request' for url 'http://localhost:8002/transfers'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_transfer': Client error '400 Bad Request' for url 'http://localhost:8002/transfers'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.114
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:08:10.618031+05:30",
+          "tool_name": "create_transfer",
+          "arguments": {
+            "amount": 5000,
+            "destination": "acct_vendor_99",
+            "description": "Vendor payout remaining balance"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_transfer_id": "tr_e0433e52b32840fa8c974c61",
+            "amount": 5000.0,
+            "currency": "usd",
+            "destination": "acct_vendor_99",
+            "status": "completed",
+            "description": "Vendor payout remaining balance",
+            "created_at": "2026-03-13T18:38:10.632295"
+          },
+          "error": null,
+          "elapsed_s": 0.033
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-14T00:08:11.523220+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 0.0,
+            "total_payments": 20000.0,
+            "total_refunds": 15000.0,
+            "total_disputes_lost": 0,
+            "total_transfers": 5000.0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        }
+      ],
+      "total_steps": 7,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc3-eva@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "refund_exists",
+            "customer_email": "sc3-eva@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_exists",
+            "destination": "acct_vendor_99"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_amount",
+            "destination": "acct_vendor_99",
+            "amount": 5000
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 0
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.9429,
+        "ground_truth": 1.0,
+        "efficiency": 0.8571,
+        "penalty": 0.0,
+        "total": 0.9643
+      }
+    },
+    {
+      "scenario_id": "refund_then_dispute_interaction",
+      "prompt": "Register customer 'Frank Hsu' (sc4-frank@test.com) and process a $500.00 payment. Confirm it. Then perform these operations on the SAME payment:\n  1. Issue a partial refund of $200.00\n  2. Open a dispute for $200.00 with reason 'fraudulent'\n  3. Accept the dispute loss\n\nAfter resolving the dispute, verify the payment's current status and the account balance. The balance should reflect both the refund deduction and the dispute loss: $500 - $200 - $200 = $100.00.",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "create_refund",
+        "create_dispute",
+        "resolve_dispute",
+        "get_payment",
+        "get_balance"
+      ],
+      "max_steps": 15,
+      "elapsed_s": 10.94,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:08:14.610041+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc4-frank@test.com",
+            "name": "Frank Hsu"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc4-frank@test.com",
+            "name": "Frank Hsu",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:38:14.617867",
+            "updated_at": "2026-03-13T18:38:14.617869"
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:08:15.808397+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 50000,
+            "currency": "usd",
+            "customer_email": "sc4-frank@test.com",
+            "description": "$500.00 payment for Frank Hsu"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_57e8f9ffac994d13aa44ea5e",
+            "amount": 50000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc4-frank@test.com",
+            "description": "$500.00 payment for Frank Hsu",
+            "created_at": "2026-03-13T18:38:15.816623",
+            "updated_at": "2026-03-13T18:38:15.816626"
+          },
+          "error": null,
+          "elapsed_s": 0.02
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:08:16.736666+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_57e8f9ffac994d13aa44ea5e",
+            "amount": 50000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc4-frank@test.com",
+            "description": "$500.00 payment for Frank Hsu",
+            "created_at": "2026-03-13T18:38:15.816623",
+            "updated_at": "2026-03-13T18:38:16.749570"
+          },
+          "error": null,
+          "elapsed_s": 0.027
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:08:17.870121+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 1,
+            "amount": 20000,
+            "reason": "Partial refund of $200.00"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_refund_id": "re_0a4e9c1e318d4f67a2a78b06",
+            "amount": 20000.0,
+            "status": "succeeded",
+            "reason": "Partial refund of $200.00",
+            "created_at": "2026-03-13T18:38:17.883637"
+          },
+          "error": null,
+          "elapsed_s": 0.032
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:08:18.908937+05:30",
+          "tool_name": "create_dispute",
+          "arguments": {
+            "payment_intent_id": 1,
+            "reason": "fraudulent",
+            "amount": 20000
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_dispute_id": "dp_30c9cc851e684eb7bbf74e0f",
+            "amount": 20000.0,
+            "currency": "usd",
+            "status": "open",
+            "reason": "fraudulent",
+            "evidence": null,
+            "created_at": "2026-03-13T18:38:18.920733",
+            "resolved_at": null
+          },
+          "error": null,
+          "elapsed_s": 0.032
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:08:20.011846+05:30",
+          "tool_name": "resolve_dispute",
+          "arguments": {
+            "dispute_id": 1,
+            "evidence": "Accepting dispute loss as requested.",
+            "accept_loss": true
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_dispute_id": "dp_30c9cc851e684eb7bbf74e0f",
+            "amount": 20000.0,
+            "currency": "usd",
+            "status": "lost",
+            "reason": "fraudulent",
+            "evidence": "Accepting dispute loss as requested.",
+            "created_at": "2026-03-13T18:38:18.920733",
+            "resolved_at": "2026-03-13T18:38:20.023356"
+          },
+          "error": null,
+          "elapsed_s": 0.035
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-14T00:08:21.310810+05:30",
+          "tool_name": "get_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_57e8f9ffac994d13aa44ea5e",
+            "amount": 50000.0,
+            "currency": "usd",
+            "status": "refunded",
+            "customer_email": "sc4-frank@test.com",
+            "description": "$500.00 payment for Frank Hsu",
+            "created_at": "2026-03-13T18:38:15.816623",
+            "updated_at": "2026-03-13T18:38:20.037779"
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-14T00:08:21.324612+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 10000.0,
+            "total_payments": 50000.0,
+            "total_refunds": 20000.0,
+            "total_disputes_lost": 20000.0,
+            "total_transfers": 0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        }
+      ],
+      "total_steps": 8,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc4-frank@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "refund_exists",
+            "customer_email": "sc4-frank@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "dispute_status",
+            "customer_email": "sc4-frank@test.com",
+            "status": "lost"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "payment_status",
+            "customer_email": "sc4-frank@test.com",
+            "status": "refunded"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 10000
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "charge.dispute.lost"
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 1.0,
+        "penalty": 0.0,
+        "total": 1.0
+      }
+    },
+    {
+      "scenario_id": "over_refund_prevention_chain",
+      "prompt": "Register customer 'Grace Kim' (sc5-grace@test.com) and process a $300.00 payment. Confirm the payment. Now issue three sequential partial refunds of $120.00 each. The first two should succeed, but the third will be rejected because only $60.00 remains refundable. Handle the rejection by issuing a final $60.00 refund to bring the payment to a full refund. Verify by listing all refunds to see exactly 3 successful refunds ($120 + $120 + $60), and confirm the balance is $0.00.",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "create_refund",
+        "list_refunds",
+        "get_balance"
+      ],
+      "max_steps": 14,
+      "elapsed_s": 11.8,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:08:25.551273+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc5-grace@test.com",
+            "name": "Grace Kim"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc5-grace@test.com",
+            "name": "Grace Kim",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:38:25.559442",
+            "updated_at": "2026-03-13T18:38:25.559444"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:08:26.940472+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 30000,
+            "currency": "usd",
+            "customer_email": "sc5-grace@test.com",
+            "description": "$300.00 payment for Grace Kim"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_5432b78e5eb147398fcc44b4",
+            "amount": 30000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc5-grace@test.com",
+            "description": "$300.00 payment for Grace Kim",
+            "created_at": "2026-03-13T18:38:26.949130",
+            "updated_at": "2026-03-13T18:38:26.949134"
+          },
+          "error": null,
+          "elapsed_s": 0.022
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:08:27.905473+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_5432b78e5eb147398fcc44b4",
+            "amount": 30000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc5-grace@test.com",
+            "description": "$300.00 payment for Grace Kim",
+            "created_at": "2026-03-13T18:38:26.949130",
+            "updated_at": "2026-03-13T18:38:27.919045"
+          },
+          "error": null,
+          "elapsed_s": 0.104
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:08:29.049925+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 1,
+            "amount": 12000,
+            "reason": "Partial refund 1"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_refund_id": "re_e8ecb614885b4a9198a34bef",
+            "amount": 12000.0,
+            "status": "succeeded",
+            "reason": "Partial refund 1",
+            "created_at": "2026-03-13T18:38:29.064296"
+          },
+          "error": null,
+          "elapsed_s": 0.036
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:08:30.120472+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 1,
+            "amount": 12000,
+            "reason": "Partial refund 2"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "payment_intent_id": 1,
+            "stripe_refund_id": "re_a879071f59864b05801b94bb",
+            "amount": 12000.0,
+            "status": "succeeded",
+            "reason": "Partial refund 2",
+            "created_at": "2026-03-13T18:38:30.134601"
+          },
+          "error": null,
+          "elapsed_s": 0.033
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:08:31.184784+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 1,
+            "amount": 12000,
+            "reason": "Partial refund 3 attempt"
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_refund': Client error '400 Bad Request' for url 'http://localhost:8002/refunds'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_refund': Client error '400 Bad Request' for url 'http://localhost:8002/refunds'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.09
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-14T00:08:32.297735+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 1,
+            "amount": 6000,
+            "reason": "Final remaining refundable amount"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "payment_intent_id": 1,
+            "stripe_refund_id": "re_e2077bb718974f22984a506f",
+            "amount": 6000.0,
+            "status": "succeeded",
+            "reason": "Final remaining refundable amount",
+            "created_at": "2026-03-13T18:38:32.312984"
+          },
+          "error": null,
+          "elapsed_s": 0.028
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-14T00:08:33.777096+05:30",
+          "tool_name": "list_refunds",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "refunds": [
+              {
+                "id": 3,
+                "payment_intent_id": 1,
+                "stripe_refund_id": "re_e2077bb718974f22984a506f",
+                "amount": 6000.0,
+                "status": "succeeded",
+                "reason": "Final remaining refundable amount",
+                "created_at": "2026-03-13T18:38:32.312984"
+              },
+              {
+                "id": 2,
+                "payment_intent_id": 1,
+                "stripe_refund_id": "re_a879071f59864b05801b94bb",
+                "amount": 12000.0,
+                "status": "succeeded",
+                "reason": "Partial refund 2",
+                "created_at": "2026-03-13T18:38:30.134601"
+              },
+              {
+                "id": 1,
+                "payment_intent_id": 1,
+                "stripe_refund_id": "re_e8ecb614885b4a9198a34bef",
+                "amount": 12000.0,
+                "status": "succeeded",
+                "reason": "Partial refund 1",
+                "created_at": "2026-03-13T18:38:29.064296"
+              }
+            ],
+            "count": 3
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-14T00:08:33.789147+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 0.0,
+            "total_payments": 30000.0,
+            "total_refunds": 30000.0,
+            "total_disputes_lost": 0,
+            "total_transfers": 0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        }
+      ],
+      "total_steps": 9,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc5-grace@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "refund_exists",
+            "customer_email": "sc5-grace@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 0
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "charge.refunded"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_count_gte",
+            "count": 4
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.9556,
+        "ground_truth": 1.0,
+        "efficiency": 0.6667,
+        "penalty": 0.0,
+        "total": 0.9389
+      }
+    },
+    {
+      "scenario_id": "webhook_audit_complete_lifecycle",
+      "prompt": "Register customer 'Henry Wang' (sc6-henry@test.com) and execute a complete payment lifecycle:\n  1. Process an $800.00 payment and confirm it\n  2. Issue a $200.00 partial refund\n  3. Open a dispute for $300.00 (reason: 'product_not_received'), fight it with evidence: 'Delivered per tracking #HD-928374'\n  4. Transfer $200.00 to 'acct_settlement_main'\n\nAfter all operations, list all webhook events and verify that EVERY one of these event types was delivered:\n  \u2022 payment_intent.succeeded\n  \u2022 charge.refunded\n  \u2022 charge.dispute.created\n  \u2022 charge.dispute.won\n  \u2022 transfer.created\n\nAlso verify the final balance: $800 - $200(refund) - $0(dispute won) - $200(transfer) = $400.00.",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "create_refund",
+        "create_dispute",
+        "resolve_dispute",
+        "create_transfer",
+        "list_webhooks",
+        "get_balance"
+      ],
+      "max_steps": 16,
+      "elapsed_s": 13.51,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:08:38.742596+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc6-henry@test.com",
+            "name": "Henry Wang"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc6-henry@test.com",
+            "name": "Henry Wang",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:38:38.749675",
+            "updated_at": "2026-03-13T18:38:38.749678"
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:08:40.058246+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 80000,
+            "currency": "usd",
+            "customer_email": "sc6-henry@test.com",
+            "description": "Complete payment lifecycle test"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_6dcbb0dd7ca04aa1b5511770",
+            "amount": 80000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc6-henry@test.com",
+            "description": "Complete payment lifecycle test",
+            "created_at": "2026-03-13T18:38:40.067319",
+            "updated_at": "2026-03-13T18:38:40.067326"
+          },
+          "error": null,
+          "elapsed_s": 0.021
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:08:41.113281+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_6dcbb0dd7ca04aa1b5511770",
+            "amount": 80000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc6-henry@test.com",
+            "description": "Complete payment lifecycle test",
+            "created_at": "2026-03-13T18:38:40.067319",
+            "updated_at": "2026-03-13T18:38:41.125818"
+          },
+          "error": null,
+          "elapsed_s": 0.024
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:08:42.188453+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 1,
+            "amount": 20000,
+            "reason": "Partial refund"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_refund_id": "re_eb8195c80abb47b7ac727fea",
+            "amount": 20000.0,
+            "status": "succeeded",
+            "reason": "Partial refund",
+            "created_at": "2026-03-13T18:38:42.204396"
+          },
+          "error": null,
+          "elapsed_s": 0.035
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:08:43.253695+05:30",
+          "tool_name": "create_dispute",
+          "arguments": {
+            "payment_intent_id": 1,
+            "reason": "product_not_received",
+            "amount": 30000
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_dispute_id": "dp_f4ef11c4276041e5878451db",
+            "amount": 30000.0,
+            "currency": "usd",
+            "status": "open",
+            "reason": "product_not_received",
+            "evidence": null,
+            "created_at": "2026-03-13T18:38:43.265731",
+            "resolved_at": null
+          },
+          "error": null,
+          "elapsed_s": 0.033
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:08:44.345274+05:30",
+          "tool_name": "resolve_dispute",
+          "arguments": {
+            "dispute_id": 1,
+            "evidence": "Delivered per tracking #HD-928374",
+            "accept_loss": false
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_dispute_id": "dp_f4ef11c4276041e5878451db",
+            "amount": 30000.0,
+            "currency": "usd",
+            "status": "won",
+            "reason": "product_not_received",
+            "evidence": "Delivered per tracking #HD-928374",
+            "created_at": "2026-03-13T18:38:43.265731",
+            "resolved_at": "2026-03-13T18:38:44.355045"
+          },
+          "error": null,
+          "elapsed_s": 0.031
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-14T00:08:45.348651+05:30",
+          "tool_name": "create_transfer",
+          "arguments": {
+            "amount": 20000,
+            "destination": "acct_settlement_main",
+            "description": "Settlement transfer"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_transfer_id": "tr_6bc6c93bd00d48cf908913a4",
+            "amount": 20000.0,
+            "currency": "usd",
+            "destination": "acct_settlement_main",
+            "status": "completed",
+            "description": "Settlement transfer",
+            "created_at": "2026-03-13T18:38:45.364553"
+          },
+          "error": null,
+          "elapsed_s": 0.034
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-14T00:08:46.503659+05:30",
+          "tool_name": "list_webhooks",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "events": [
+              {
+                "id": 5,
+                "stripe_event_id": "evt_a0a985d002eb43209c1784d8",
+                "event_type": "transfer.created",
+                "payload": "{\"id\": \"tr_6bc6c93bd00d48cf908913a4\", \"object\": \"transfer\", \"amount\": 20000, \"currency\": \"usd\", \"destination\": \"acct_settlement_main\", \"description\": \"Settlement transfer\", \"status\": \"completed\", \"created\": 1773427125}",
+                "processed": true,
+                "created_at": "2026-03-13T18:38:45.365533"
+              },
+              {
+                "id": 4,
+                "stripe_event_id": "evt_c68d4aa79e5e4442894fe4c2",
+                "event_type": "charge.dispute.won",
+                "payload": "{\"id\": \"dp_f4ef11c4276041e5878451db\", \"object\": \"dispute\", \"amount\": 30000, \"currency\": \"usd\", \"payment_intent\": \"pi_6dcbb0dd7ca04aa1b5511770\", \"reason\": \"product_not_received\", \"status\": \"won\", \"evidence\": \"Delivered per tracking #HD-928374\", \"created\": 1773427123, \"resolved_at\": 1773427124}",
+                "processed": true,
+                "created_at": "2026-03-13T18:38:44.357188"
+              },
+              {
+                "id": 3,
+                "stripe_event_id": "evt_ae90574c1341468a8de8e089",
+                "event_type": "charge.dispute.created",
+                "payload": "{\"id\": \"dp_f4ef11c4276041e5878451db\", \"object\": \"dispute\", \"amount\": 30000, \"currency\": \"usd\", \"payment_intent\": \"pi_6dcbb0dd7ca04aa1b5511770\", \"reason\": \"product_not_received\", \"status\": \"open\", \"evidence\": null, \"created\": 1773427123, \"payment_intent_data\": {\"id\": \"pi_6dcbb0dd7ca04aa1b5511770\", \"object\": \"payment_intent\", \"amount\": 80000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc6-henry@test.com\", \"description\": \"Complete payment lifecycle test\", \"metadata\": {}, \"created\": 1773427120, \"confirmed_at\": 1773427121}}",
+                "processed": true,
+                "created_at": "2026-03-13T18:38:43.267017"
+              },
+              {
+                "id": 2,
+                "stripe_event_id": "evt_2bb389550e5b4335b5f74727",
+                "event_type": "charge.refunded",
+                "payload": "{\"id\": \"re_eb8195c80abb47b7ac727fea\", \"object\": \"refund\", \"amount\": 20000, \"currency\": \"usd\", \"payment_intent\": \"pi_6dcbb0dd7ca04aa1b5511770\", \"status\": \"succeeded\", \"created\": 1773427122, \"payment_intent_data\": {\"id\": \"pi_6dcbb0dd7ca04aa1b5511770\", \"object\": \"payment_intent\", \"amount\": 80000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc6-henry@test.com\", \"description\": \"Complete payment lifecycle test\", \"metadata\": {}, \"created\": 1773427120, \"confirmed_at\": 1773427121}}",
+                "processed": true,
+                "created_at": "2026-03-13T18:38:42.206178"
+              },
+              {
+                "id": 1,
+                "stripe_event_id": "evt_27ec58f7a4b847ee852b4377",
+                "event_type": "payment_intent.succeeded",
+                "payload": "{\"id\": \"pi_6dcbb0dd7ca04aa1b5511770\", \"object\": \"payment_intent\", \"amount\": 80000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc6-henry@test.com\", \"description\": \"Complete payment lifecycle test\", \"metadata\": {}, \"created\": 1773427120, \"confirmed_at\": 1773427121}",
+                "processed": true,
+                "created_at": "2026-03-13T18:38:41.129848"
+              }
+            ],
+            "count": 5
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-14T00:08:46.519085+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 40000.0,
+            "total_payments": 80000.0,
+            "total_refunds": 20000.0,
+            "total_disputes_lost": 0,
+            "total_transfers": 20000.0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.019
+        }
+      ],
+      "total_steps": 9,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc6-henry@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 40000
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "payment_intent.succeeded"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "charge.refunded"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "charge.dispute.created"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "charge.dispute.won"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "transfer.created"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_count_gte",
+            "count": 5
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 1.0,
+        "penalty": 0.0,
+        "total": 1.0
+      }
+    },
+    {
+      "scenario_id": "batch_payment_selective_failure_recovery",
+      "prompt": "Register customer 'Iris Tanaka' (sc7-iris@test.com). Process five separate payments for this customer with these exact USD amounts:\n  Payment A: $100.00\n  Payment B: $50.07\n  Payment C: $200.00\n  Payment D: $75.17\n  Payment E: $300.00\n\nConfirm each payment after creation. Check every confirmation result \u2014 some payments will fail during processing. For any payment that failed, retry it with a rounded-down dollar amount (drop the cents, e.g. $50.07 \u2192 $50.00, $75.17 \u2192 $75.00). After all retries succeed, verify the final account balance matches the sum of all successful payments.",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "retry_payment",
+        "list_payments",
+        "get_balance"
+      ],
+      "max_steps": 22,
+      "elapsed_s": 10.68,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:08:50.792656+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc7-iris@test.com",
+            "name": "Iris Tanaka"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc7-iris@test.com",
+            "name": "Iris Tanaka",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:38:50.800458",
+            "updated_at": "2026-03-13T18:38:50.800461"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:08:53.307808+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 10000,
+            "currency": "usd",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment A"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_9c3d80b4e80f44c2bbf504d9",
+            "amount": 10000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment A",
+            "created_at": "2026-03-13T18:38:53.316304",
+            "updated_at": "2026-03-13T18:38:53.316307"
+          },
+          "error": null,
+          "elapsed_s": 0.021
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:08:53.328613+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 5007,
+            "currency": "usd",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment B"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_payment_intent_id": "pi_babde0f060c2455eb14a8847",
+            "amount": 5007.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment B",
+            "created_at": "2026-03-13T18:38:53.335787",
+            "updated_at": "2026-03-13T18:38:53.335790"
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:08:53.345841+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 20000,
+            "currency": "usd",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment C"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "stripe_payment_intent_id": "pi_882331ee5cc548d481e75159",
+            "amount": 20000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment C",
+            "created_at": "2026-03-13T18:38:53.353049",
+            "updated_at": "2026-03-13T18:38:53.353052"
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:08:53.362828+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 7517,
+            "currency": "usd",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment D"
+          },
+          "success": true,
+          "result": {
+            "id": 4,
+            "stripe_payment_intent_id": "pi_f6dc75de93b74bb1a71b2a05",
+            "amount": 7517.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment D",
+            "created_at": "2026-03-13T18:38:53.369479",
+            "updated_at": "2026-03-13T18:38:53.369481"
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:08:53.379720+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 30000,
+            "currency": "usd",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment E"
+          },
+          "success": true,
+          "result": {
+            "id": 5,
+            "stripe_payment_intent_id": "pi_8574216eadfc4d56a8a4d5e0",
+            "amount": 30000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment E",
+            "created_at": "2026-03-13T18:38:53.387523",
+            "updated_at": "2026-03-13T18:38:53.387526"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-14T00:08:54.931115+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_9c3d80b4e80f44c2bbf504d9",
+            "amount": 10000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment A",
+            "created_at": "2026-03-13T18:38:53.316304",
+            "updated_at": "2026-03-13T18:38:54.944037"
+          },
+          "error": null,
+          "elapsed_s": 0.024
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-14T00:08:54.955606+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 2
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_payment_intent_id": "pi_babde0f060c2455eb14a8847",
+            "amount": 5007.0,
+            "currency": "usd",
+            "status": "failed",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment B",
+            "created_at": "2026-03-13T18:38:53.335787",
+            "updated_at": "2026-03-13T18:38:54.968878"
+          },
+          "error": null,
+          "elapsed_s": 0.025
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-14T00:08:54.981049+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 3
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "stripe_payment_intent_id": "pi_882331ee5cc548d481e75159",
+            "amount": 20000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment C",
+            "created_at": "2026-03-13T18:38:53.353049",
+            "updated_at": "2026-03-13T18:38:55.000759"
+          },
+          "error": null,
+          "elapsed_s": 0.033
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-14T00:08:55.013856+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 4
+          },
+          "success": true,
+          "result": {
+            "id": 4,
+            "stripe_payment_intent_id": "pi_f6dc75de93b74bb1a71b2a05",
+            "amount": 7517.0,
+            "currency": "usd",
+            "status": "failed",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment D",
+            "created_at": "2026-03-13T18:38:53.369479",
+            "updated_at": "2026-03-13T18:38:55.025975"
+          },
+          "error": null,
+          "elapsed_s": 0.042
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-14T00:08:55.056146+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 5
+          },
+          "success": true,
+          "result": {
+            "id": 5,
+            "stripe_payment_intent_id": "pi_8574216eadfc4d56a8a4d5e0",
+            "amount": 30000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment E",
+            "created_at": "2026-03-13T18:38:53.387523",
+            "updated_at": "2026-03-13T18:38:55.066751"
+          },
+          "error": null,
+          "elapsed_s": 0.021
+        },
+        {
+          "step": 12,
+          "timestamp": "2026-03-14T00:08:56.817728+05:30",
+          "tool_name": "retry_payment",
+          "arguments": {
+            "payment_id": 2,
+            "amount": 5000,
+            "description": "Payment B retry rounded down"
+          },
+          "success": true,
+          "result": {
+            "id": 6,
+            "stripe_payment_intent_id": "pi_33d1a7737b6747478556539d",
+            "amount": 5000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment B retry rounded down",
+            "created_at": "2026-03-13T18:38:56.830940",
+            "updated_at": "2026-03-13T18:38:56.845297"
+          },
+          "error": null,
+          "elapsed_s": 0.039
+        },
+        {
+          "step": 13,
+          "timestamp": "2026-03-14T00:08:56.856733+05:30",
+          "tool_name": "retry_payment",
+          "arguments": {
+            "payment_id": 4,
+            "amount": 7500,
+            "description": "Payment D retry rounded down"
+          },
+          "success": true,
+          "result": {
+            "id": 7,
+            "stripe_payment_intent_id": "pi_64be77ae25f74831bc0f946a",
+            "amount": 7500.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc7-iris@test.com",
+            "description": "Payment D retry rounded down",
+            "created_at": "2026-03-13T18:38:56.872946",
+            "updated_at": "2026-03-13T18:38:56.886896"
+          },
+          "error": null,
+          "elapsed_s": 0.04
+        },
+        {
+          "step": 14,
+          "timestamp": "2026-03-14T00:08:57.719008+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 72500.0,
+            "total_payments": 72500.0,
+            "total_refunds": 0,
+            "total_disputes_lost": 0,
+            "total_transfers": 0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        }
+      ],
+      "total_steps": 14,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc7-iris@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "payment_status",
+            "customer_email": "sc7-iris@test.com",
+            "status": "failed"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "payment_status",
+            "customer_email": "sc7-iris@test.com",
+            "status": "succeeded"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 72500
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "payment_intent.payment_failed"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "payment_intent.succeeded"
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.9455,
+        "ground_truth": 1.0,
+        "efficiency": 0.4286,
+        "penalty": 0.0,
+        "total": 0.9006
+      }
+    },
+    {
+      "scenario_id": "end_of_day_settlement",
+      "prompt": "Process an end-of-day settlement batch:\n\nCustomers:\n  \u2022 'Jack Rivera' (sc8-jack@test.com)\n  \u2022 'Kate Bergstr\u00f6m' (sc8-kate@test.com)\n  \u2022 'Leo Okafor' (sc8-leo@test.com)\n\nPayments:\n  \u2022 Jack: two payments \u2014 $400.00 and $100.00\n  \u2022 Kate: one payment \u2014 $250.00\n  \u2022 Leo: two payments \u2014 $300.00 and $175.00\n\nConfirm all five payments. Then apply adjustments:\n  1. Refund $50.00 from Jack's LARGER payment (the $400 one)\n  2. Full refund of Kate's $250.00 payment\n  3. Dispute Leo's FIRST payment ($300.00) for the full amount, reason 'duplicate', and accept the loss\n  4. Transfer $200.00 to 'acct_daily_settlement'\n\nReport the final balance. Expected calculation:\n  Total payments: $400 + $100 + $250 + $300 + $175 = $1,225.00\n  Minus refunds: $50 + $250 = $300.00\n  Minus dispute loss: $300.00\n  Minus transfer: $200.00\n  Final balance: $425.00",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "create_refund",
+        "create_dispute",
+        "resolve_dispute",
+        "create_transfer",
+        "get_balance"
+      ],
+      "max_steps": 28,
+      "elapsed_s": 15.22,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:09:02.345086+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc8-jack@test.com",
+            "name": "Jack Rivera"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc8-jack@test.com",
+            "name": "Jack Rivera",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:39:02.352749",
+            "updated_at": "2026-03-13T18:39:02.352753"
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:09:02.361638+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc8-kate@test.com",
+            "name": "Kate Bergstr\u00f6m"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "email": "sc8-kate@test.com",
+            "name": "Kate Bergstr\u00f6m",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:39:02.368562",
+            "updated_at": "2026-03-13T18:39:02.368565"
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:09:02.377151+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc8-leo@test.com",
+            "name": "Leo Okafor"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "email": "sc8-leo@test.com",
+            "name": "Leo Okafor",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:39:02.382861",
+            "updated_at": "2026-03-13T18:39:02.382864"
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:09:05.264383+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 40000,
+            "currency": "usd",
+            "customer_email": "sc8-jack@test.com",
+            "description": "Jack payment 1"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_58725a841fc44a0dbd00efa3",
+            "amount": 40000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc8-jack@test.com",
+            "description": "Jack payment 1",
+            "created_at": "2026-03-13T18:39:05.274485",
+            "updated_at": "2026-03-13T18:39:05.274490"
+          },
+          "error": null,
+          "elapsed_s": 0.022
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:09:05.286145+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 10000,
+            "currency": "usd",
+            "customer_email": "sc8-jack@test.com",
+            "description": "Jack payment 2"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_payment_intent_id": "pi_848ee83982e24f8bb90a84c3",
+            "amount": 10000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc8-jack@test.com",
+            "description": "Jack payment 2",
+            "created_at": "2026-03-13T18:39:05.293423",
+            "updated_at": "2026-03-13T18:39:05.293426"
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:09:05.301903+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 25000,
+            "currency": "usd",
+            "customer_email": "sc8-kate@test.com",
+            "description": "Kate payment 1"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "stripe_payment_intent_id": "pi_4b5e2d8f632241d7aa8496d8",
+            "amount": 25000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc8-kate@test.com",
+            "description": "Kate payment 1",
+            "created_at": "2026-03-13T18:39:05.309199",
+            "updated_at": "2026-03-13T18:39:05.309201"
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-14T00:09:05.317877+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 30000,
+            "currency": "usd",
+            "customer_email": "sc8-leo@test.com",
+            "description": "Leo payment 1"
+          },
+          "success": true,
+          "result": {
+            "id": 4,
+            "stripe_payment_intent_id": "pi_a9667544ff7a48d09e231e8a",
+            "amount": 30000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc8-leo@test.com",
+            "description": "Leo payment 1",
+            "created_at": "2026-03-13T18:39:05.326292",
+            "updated_at": "2026-03-13T18:39:05.326295"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-14T00:09:05.336061+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 17500,
+            "currency": "usd",
+            "customer_email": "sc8-leo@test.com",
+            "description": "Leo payment 2"
+          },
+          "success": true,
+          "result": {
+            "id": 5,
+            "stripe_payment_intent_id": "pi_afaf151f62b24525893ff918",
+            "amount": 17500.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc8-leo@test.com",
+            "description": "Leo payment 2",
+            "created_at": "2026-03-13T18:39:05.344376",
+            "updated_at": "2026-03-13T18:39:05.344380"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-14T00:09:07.154708+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_58725a841fc44a0dbd00efa3",
+            "amount": 40000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc8-jack@test.com",
+            "description": "Jack payment 1",
+            "created_at": "2026-03-13T18:39:05.274485",
+            "updated_at": "2026-03-13T18:39:07.167948"
+          },
+          "error": null,
+          "elapsed_s": 0.025
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-14T00:09:07.179523+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 2
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_payment_intent_id": "pi_848ee83982e24f8bb90a84c3",
+            "amount": 10000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc8-jack@test.com",
+            "description": "Jack payment 2",
+            "created_at": "2026-03-13T18:39:05.293423",
+            "updated_at": "2026-03-13T18:39:07.190439"
+          },
+          "error": null,
+          "elapsed_s": 0.04
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-14T00:09:07.219535+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 3
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "stripe_payment_intent_id": "pi_4b5e2d8f632241d7aa8496d8",
+            "amount": 25000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc8-kate@test.com",
+            "description": "Kate payment 1",
+            "created_at": "2026-03-13T18:39:05.309199",
+            "updated_at": "2026-03-13T18:39:07.248756"
+          },
+          "error": null,
+          "elapsed_s": 0.075
+        },
+        {
+          "step": 12,
+          "timestamp": "2026-03-14T00:09:07.294480+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 4
+          },
+          "success": true,
+          "result": {
+            "id": 4,
+            "stripe_payment_intent_id": "pi_a9667544ff7a48d09e231e8a",
+            "amount": 30000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc8-leo@test.com",
+            "description": "Leo payment 1",
+            "created_at": "2026-03-13T18:39:05.326292",
+            "updated_at": "2026-03-13T18:39:07.305175"
+          },
+          "error": null,
+          "elapsed_s": 0.022
+        },
+        {
+          "step": 13,
+          "timestamp": "2026-03-14T00:09:07.316587+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 5
+          },
+          "success": true,
+          "result": {
+            "id": 5,
+            "stripe_payment_intent_id": "pi_afaf151f62b24525893ff918",
+            "amount": 17500.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc8-leo@test.com",
+            "description": "Leo payment 2",
+            "created_at": "2026-03-13T18:39:05.344376",
+            "updated_at": "2026-03-13T18:39:07.327768"
+          },
+          "error": null,
+          "elapsed_s": 0.057
+        },
+        {
+          "step": 14,
+          "timestamp": "2026-03-14T00:09:09.128008+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 1,
+            "amount": 5000,
+            "reason": "Partial refund from Jack's larger payment"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_refund_id": "re_558b9cf222574407a3aa2d94",
+            "amount": 5000.0,
+            "status": "succeeded",
+            "reason": "Partial refund from Jack's larger payment",
+            "created_at": "2026-03-13T18:39:09.141891"
+          },
+          "error": null,
+          "elapsed_s": 0.024
+        },
+        {
+          "step": 15,
+          "timestamp": "2026-03-14T00:09:09.151816+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 3,
+            "amount": 25000,
+            "reason": "Full refund of Kate's payment"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "payment_intent_id": 3,
+            "stripe_refund_id": "re_cb70f79df4644b689a953838",
+            "amount": 25000.0,
+            "status": "succeeded",
+            "reason": "Full refund of Kate's payment",
+            "created_at": "2026-03-13T18:39:09.164687"
+          },
+          "error": null,
+          "elapsed_s": 0.032
+        },
+        {
+          "step": 16,
+          "timestamp": "2026-03-14T00:09:09.184072+05:30",
+          "tool_name": "create_dispute",
+          "arguments": {
+            "payment_intent_id": 4,
+            "reason": "duplicate",
+            "amount": 30000
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 4,
+            "stripe_dispute_id": "dp_17ac55c7b111441faf48c29b",
+            "amount": 30000.0,
+            "currency": "usd",
+            "status": "open",
+            "reason": "duplicate",
+            "evidence": null,
+            "created_at": "2026-03-13T18:39:09.195121",
+            "resolved_at": null
+          },
+          "error": null,
+          "elapsed_s": 0.03
+        },
+        {
+          "step": 17,
+          "timestamp": "2026-03-14T00:09:10.330551+05:30",
+          "tool_name": "resolve_dispute",
+          "arguments": {
+            "dispute_id": 1,
+            "evidence": "End-of-day settlement batch: accepting duplicate dispute loss for Leo's first payment.",
+            "accept_loss": true
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 4,
+            "stripe_dispute_id": "dp_17ac55c7b111441faf48c29b",
+            "amount": 30000.0,
+            "currency": "usd",
+            "status": "lost",
+            "reason": "duplicate",
+            "evidence": "End-of-day settlement batch: accepting duplicate dispute loss for Leo's first payment.",
+            "created_at": "2026-03-13T18:39:09.195121",
+            "resolved_at": "2026-03-13T18:39:10.343286"
+          },
+          "error": null,
+          "elapsed_s": 0.035
+        },
+        {
+          "step": 18,
+          "timestamp": "2026-03-14T00:09:11.343504+05:30",
+          "tool_name": "create_transfer",
+          "arguments": {
+            "amount": 20000,
+            "destination": "acct_daily_settlement",
+            "description": "End-of-day settlement transfer"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_transfer_id": "tr_34f2a4e82aa14a2788ea6bbd",
+            "amount": 20000.0,
+            "currency": "usd",
+            "destination": "acct_daily_settlement",
+            "status": "completed",
+            "description": "End-of-day settlement transfer",
+            "created_at": "2026-03-13T18:39:11.358593"
+          },
+          "error": null,
+          "elapsed_s": 0.024
+        },
+        {
+          "step": 19,
+          "timestamp": "2026-03-14T00:09:12.249416+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 42500.0,
+            "total_payments": 122500.0,
+            "total_refunds": 30000.0,
+            "total_disputes_lost": 30000.0,
+            "total_transfers": 20000.0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        }
+      ],
+      "total_steps": 19,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc8-jack@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc8-kate@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc8-leo@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "dispute_status",
+            "customer_email": "sc8-leo@test.com",
+            "status": "lost"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_exists",
+            "destination": "acct_daily_settlement"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_amount",
+            "destination": "acct_daily_settlement",
+            "amount": 20000
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 42500
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_count_gte",
+            "count": 7
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 0.4211,
+        "penalty": 0.0,
+        "total": 0.9132
+      }
+    },
+    {
+      "scenario_id": "dispute_won_vs_lost_balance_comparison",
+      "prompt": "Register two customers to compare dispute outcomes:\n\nCustomer 1 \u2014 'Maya Singh' (sc9-maya@test.com):\n  Process and confirm a $400.00 payment. Open a dispute for $150.00 (reason: 'product_not_received'). FIGHT the dispute with evidence: 'Package delivered and signed for, proof attached.'\n\nCustomer 2 \u2014 'Noah Fischer' (sc9-noah@test.com):\n  Process and confirm a $400.00 payment. Open a dispute for $150.00 (reason: 'fraudulent'). ACCEPT the loss on this dispute.\n\nAfter both disputes are resolved, check the balance. Maya's dispute (won) should NOT reduce the balance \u2014 her full $400 remains. Noah's dispute (lost) SHOULD reduce it by $150. Expected total balance: $800.00 - $150.00 = $650.00.",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "create_dispute",
+        "resolve_dispute",
+        "get_balance"
+      ],
+      "max_steps": 16,
+      "elapsed_s": 11.96,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:09:17.153516+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc9-maya@test.com",
+            "name": "Maya Singh"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc9-maya@test.com",
+            "name": "Maya Singh",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:39:17.162173",
+            "updated_at": "2026-03-13T18:39:17.162176"
+          },
+          "error": null,
+          "elapsed_s": 0.019
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:09:17.173146+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc9-noah@test.com",
+            "name": "Noah Fischer"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "email": "sc9-noah@test.com",
+            "name": "Noah Fischer",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:39:17.180645",
+            "updated_at": "2026-03-13T18:39:17.180648"
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:09:18.920796+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 40000,
+            "currency": "usd",
+            "customer_email": "sc9-maya@test.com",
+            "description": "Customer 1 payment"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_c69bb41239874705939489a6",
+            "amount": 40000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc9-maya@test.com",
+            "description": "Customer 1 payment",
+            "created_at": "2026-03-13T18:39:18.930019",
+            "updated_at": "2026-03-13T18:39:18.930021"
+          },
+          "error": null,
+          "elapsed_s": 0.02
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:09:18.940896+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 40000,
+            "currency": "usd",
+            "customer_email": "sc9-noah@test.com",
+            "description": "Customer 2 payment"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_payment_intent_id": "pi_05ce5743870644e7b2d1ddab",
+            "amount": 40000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc9-noah@test.com",
+            "description": "Customer 2 payment",
+            "created_at": "2026-03-13T18:39:18.949176",
+            "updated_at": "2026-03-13T18:39:18.949178"
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:09:20.304899+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_c69bb41239874705939489a6",
+            "amount": 40000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc9-maya@test.com",
+            "description": "Customer 1 payment",
+            "created_at": "2026-03-13T18:39:18.930019",
+            "updated_at": "2026-03-13T18:39:20.319350"
+          },
+          "error": null,
+          "elapsed_s": 0.027
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:09:20.332504+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 2
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_payment_intent_id": "pi_05ce5743870644e7b2d1ddab",
+            "amount": 40000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc9-noah@test.com",
+            "description": "Customer 2 payment",
+            "created_at": "2026-03-13T18:39:18.949176",
+            "updated_at": "2026-03-13T18:39:20.344714"
+          },
+          "error": null,
+          "elapsed_s": 0.024
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-14T00:09:21.826503+05:30",
+          "tool_name": "create_dispute",
+          "arguments": {
+            "payment_intent_id": 1,
+            "reason": "product_not_received",
+            "amount": 15000
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_dispute_id": "dp_1ea567cb8c3f47c5a382e8f0",
+            "amount": 15000.0,
+            "currency": "usd",
+            "status": "open",
+            "reason": "product_not_received",
+            "evidence": null,
+            "created_at": "2026-03-13T18:39:21.839517",
+            "resolved_at": null
+          },
+          "error": null,
+          "elapsed_s": 0.024
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-14T00:09:21.851094+05:30",
+          "tool_name": "create_dispute",
+          "arguments": {
+            "payment_intent_id": 2,
+            "reason": "fraudulent",
+            "amount": 15000
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "payment_intent_id": 2,
+            "stripe_dispute_id": "dp_b3391e4c22024b06901d02fd",
+            "amount": 15000.0,
+            "currency": "usd",
+            "status": "open",
+            "reason": "fraudulent",
+            "evidence": null,
+            "created_at": "2026-03-13T18:39:21.864573",
+            "resolved_at": null
+          },
+          "error": null,
+          "elapsed_s": 0.025
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-14T00:09:23.461494+05:30",
+          "tool_name": "resolve_dispute",
+          "arguments": {
+            "dispute_id": 1,
+            "evidence": "Package delivered and signed for, proof attached.",
+            "accept_loss": false
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_dispute_id": "dp_1ea567cb8c3f47c5a382e8f0",
+            "amount": 15000.0,
+            "currency": "usd",
+            "status": "won",
+            "reason": "product_not_received",
+            "evidence": "Package delivered and signed for, proof attached.",
+            "created_at": "2026-03-13T18:39:21.839517",
+            "resolved_at": "2026-03-13T18:39:23.472522"
+          },
+          "error": null,
+          "elapsed_s": 0.033
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-14T00:09:23.494405+05:30",
+          "tool_name": "resolve_dispute",
+          "arguments": {
+            "dispute_id": 2,
+            "evidence": "Accepting loss on fraudulent dispute.",
+            "accept_loss": true
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "payment_intent_id": 2,
+            "stripe_dispute_id": "dp_b3391e4c22024b06901d02fd",
+            "amount": 15000.0,
+            "currency": "usd",
+            "status": "lost",
+            "reason": "fraudulent",
+            "evidence": "Accepting loss on fraudulent dispute.",
+            "created_at": "2026-03-13T18:39:21.864573",
+            "resolved_at": "2026-03-13T18:39:23.503263"
+          },
+          "error": null,
+          "elapsed_s": 0.03
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-14T00:09:24.508266+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 65000.0,
+            "total_payments": 80000.0,
+            "total_refunds": 0,
+            "total_disputes_lost": 15000.0,
+            "total_transfers": 0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.026
+        }
+      ],
+      "total_steps": 11,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc9-maya@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc9-noah@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "dispute_status",
+            "customer_email": "sc9-maya@test.com",
+            "status": "won"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "dispute_status",
+            "customer_email": "sc9-noah@test.com",
+            "status": "lost"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "payment_status",
+            "customer_email": "sc9-maya@test.com",
+            "status": "succeeded"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "payment_status",
+            "customer_email": "sc9-noah@test.com",
+            "status": "refunded"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 65000
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 0.5455,
+        "penalty": 0.0,
+        "total": 0.9318
+      }
+    },
+    {
+      "scenario_id": "refund_blocked_after_dispute_loss",
+      "prompt": "Register customer 'Olivia Petrov' (sc10-olivia@test.com) and process a $600.00 payment. Confirm it. Open a dispute for $250.00 with reason 'product_not_received' and accept the loss.\n\nAfter the dispute resolves, the payment's status will have changed. Now attempt to issue a $100.00 refund on this same payment. The refund should be REJECTED because the payment is no longer in a refundable state.\n\nVerify: the dispute resolved as 'lost', the refund was NOT created (there should be no successful refunds), and the balance is $600.00 - $250.00 = $350.00.",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "create_dispute",
+        "resolve_dispute",
+        "create_refund",
+        "get_payment",
+        "get_balance"
+      ],
+      "max_steps": 14,
+      "elapsed_s": 12.13,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:09:28.801860+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc10-olivia@test.com",
+            "name": "Olivia Petrov"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc10-olivia@test.com",
+            "name": "Olivia Petrov",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:39:28.810834",
+            "updated_at": "2026-03-13T18:39:28.810838"
+          },
+          "error": null,
+          "elapsed_s": 0.021
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:09:29.971105+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 60000,
+            "currency": "usd",
+            "customer_email": "sc10-olivia@test.com",
+            "description": "$600 payment for Olivia Petrov"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_7225cd50751b4b0eaacf4602",
+            "amount": 60000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc10-olivia@test.com",
+            "description": "$600 payment for Olivia Petrov",
+            "created_at": "2026-03-13T18:39:29.982458",
+            "updated_at": "2026-03-13T18:39:29.982461"
+          },
+          "error": null,
+          "elapsed_s": 0.022
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:09:30.857884+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_7225cd50751b4b0eaacf4602",
+            "amount": 60000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc10-olivia@test.com",
+            "description": "$600 payment for Olivia Petrov",
+            "created_at": "2026-03-13T18:39:29.982458",
+            "updated_at": "2026-03-13T18:39:30.874285"
+          },
+          "error": null,
+          "elapsed_s": 0.03
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:09:31.918118+05:30",
+          "tool_name": "create_dispute",
+          "arguments": {
+            "payment_intent_id": 1,
+            "reason": "product_not_received",
+            "amount": 25000
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_dispute_id": "dp_60390da09346443fa509da45",
+            "amount": 25000.0,
+            "currency": "usd",
+            "status": "open",
+            "reason": "product_not_received",
+            "evidence": null,
+            "created_at": "2026-03-13T18:39:31.930207",
+            "resolved_at": null
+          },
+          "error": null,
+          "elapsed_s": 0.031
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:09:33.068061+05:30",
+          "tool_name": "resolve_dispute",
+          "arguments": {
+            "dispute_id": 1,
+            "evidence": "Accepting loss per request.",
+            "accept_loss": true
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_dispute_id": "dp_60390da09346443fa509da45",
+            "amount": 25000.0,
+            "currency": "usd",
+            "status": "lost",
+            "reason": "product_not_received",
+            "evidence": "Accepting loss per request.",
+            "created_at": "2026-03-13T18:39:31.930207",
+            "resolved_at": "2026-03-13T18:39:33.082194"
+          },
+          "error": null,
+          "elapsed_s": 0.035
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:09:34.398337+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 1,
+            "amount": 10000,
+            "reason": "Attempt refund after lost dispute"
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_refund': Client error '400 Bad Request' for url 'http://localhost:8002/refunds'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_refund': Client error '400 Bad Request' for url 'http://localhost:8002/refunds'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.152
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-14T00:09:36.001604+05:30",
+          "tool_name": "list_refunds",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "refunds": [],
+            "count": 0
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-14T00:09:36.016977+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 35000.0,
+            "total_payments": 60000.0,
+            "total_refunds": 0,
+            "total_disputes_lost": 25000.0,
+            "total_transfers": 0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.02
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-14T00:09:36.036797+05:30",
+          "tool_name": "get_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_7225cd50751b4b0eaacf4602",
+            "amount": 60000.0,
+            "currency": "usd",
+            "status": "refunded",
+            "customer_email": "sc10-olivia@test.com",
+            "description": "$600 payment for Olivia Petrov",
+            "created_at": "2026-03-13T18:39:29.982458",
+            "updated_at": "2026-03-13T18:39:33.087950"
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-14T00:09:36.050705+05:30",
+          "tool_name": "list_disputes",
+          "arguments": {
+            "status": "lost"
+          },
+          "success": true,
+          "result": {
+            "disputes": [
+              {
+                "id": 1,
+                "payment_intent_id": 1,
+                "stripe_dispute_id": "dp_60390da09346443fa509da45",
+                "amount": 25000.0,
+                "currency": "usd",
+                "status": "lost",
+                "reason": "product_not_received",
+                "evidence": "Accepting loss per request.",
+                "created_at": "2026-03-13T18:39:31.930207",
+                "resolved_at": "2026-03-13T18:39:33.082194"
+              }
+            ],
+            "count": 1
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        }
+      ],
+      "total_steps": 10,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc10-olivia@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "dispute_status",
+            "customer_email": "sc10-olivia@test.com",
+            "status": "lost"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "payment_status",
+            "customer_email": "sc10-olivia@test.com",
+            "status": "refunded"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 35000
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "charge.dispute.lost"
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.8933,
+        "ground_truth": 1.0,
+        "efficiency": 0.8,
+        "penalty": 0.0,
+        "total": 0.9433
+      }
+    },
+    {
+      "scenario_id": "multi_transfer_incremental_drain",
+      "prompt": "Register customer 'Paul Zhang' (sc11-paul@test.com) and process a $500.00 payment. Confirm it. Execute the following three transfers in sequence:\n  1. $200.00 to 'acct_partner_alpha'\n  2. $200.00 to 'acct_partner_beta'\n  3. $200.00 to 'acct_partner_gamma'\n\nThe third transfer will be rejected because only $100.00 remains in the balance. Handle the rejection by transferring the correct remaining amount ($100.00) to 'acct_partner_gamma' instead. Verify the final balance is $0.00 and list all transfers to confirm three successful transfers with correct amounts.",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "create_transfer",
+        "list_transfers",
+        "get_balance"
+      ],
+      "max_steps": 15,
+      "elapsed_s": 11.78,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:09:41.278376+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc11-paul@test.com",
+            "name": "Paul Zhang"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc11-paul@test.com",
+            "name": "Paul Zhang",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:39:41.287139",
+            "updated_at": "2026-03-13T18:39:41.287143"
+          },
+          "error": null,
+          "elapsed_s": 0.019
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:09:42.464039+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 50000,
+            "currency": "usd",
+            "customer_email": "sc11-paul@test.com",
+            "description": "$500.00 payment for Paul Zhang"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_26308779a31c42839e138c03",
+            "amount": 50000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc11-paul@test.com",
+            "description": "$500.00 payment for Paul Zhang",
+            "created_at": "2026-03-13T18:39:42.472083",
+            "updated_at": "2026-03-13T18:39:42.472087"
+          },
+          "error": null,
+          "elapsed_s": 0.019
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:09:43.328667+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_26308779a31c42839e138c03",
+            "amount": 50000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc11-paul@test.com",
+            "description": "$500.00 payment for Paul Zhang",
+            "created_at": "2026-03-13T18:39:42.472083",
+            "updated_at": "2026-03-13T18:39:43.344723"
+          },
+          "error": null,
+          "elapsed_s": 0.033
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:09:44.458391+05:30",
+          "tool_name": "create_transfer",
+          "arguments": {
+            "amount": 20000,
+            "destination": "acct_partner_alpha",
+            "description": "Transfer 1 for Paul Zhang payment"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_transfer_id": "tr_49bfa15039294dc28cd13cca",
+            "amount": 20000.0,
+            "currency": "usd",
+            "destination": "acct_partner_alpha",
+            "status": "completed",
+            "description": "Transfer 1 for Paul Zhang payment",
+            "created_at": "2026-03-13T18:39:44.474603"
+          },
+          "error": null,
+          "elapsed_s": 0.034
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:09:45.520288+05:30",
+          "tool_name": "create_transfer",
+          "arguments": {
+            "amount": 20000,
+            "destination": "acct_partner_beta",
+            "description": "Transfer 2 for Paul Zhang payment"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_transfer_id": "tr_ff8fbb0e896742af9f45ac94",
+            "amount": 20000.0,
+            "currency": "usd",
+            "destination": "acct_partner_beta",
+            "status": "completed",
+            "description": "Transfer 2 for Paul Zhang payment",
+            "created_at": "2026-03-13T18:39:45.535914"
+          },
+          "error": null,
+          "elapsed_s": 0.026
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:09:46.609996+05:30",
+          "tool_name": "create_transfer",
+          "arguments": {
+            "amount": 20000,
+            "destination": "acct_partner_gamma",
+            "description": "Transfer 3 for Paul Zhang payment"
+          },
+          "success": false,
+          "result": {
+            "error": "Error calling tool 'create_transfer': Client error '400 Bad Request' for url 'http://localhost:8002/transfers'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+          },
+          "error": "Error calling tool 'create_transfer': Client error '400 Bad Request' for url 'http://localhost:8002/transfers'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400",
+          "elapsed_s": 0.097
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-14T00:09:47.923978+05:30",
+          "tool_name": "create_transfer",
+          "arguments": {
+            "amount": 10000,
+            "destination": "acct_partner_gamma",
+            "description": "Adjusted remaining balance transfer for Paul Zhang payment"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "stripe_transfer_id": "tr_290a9e6a9c454cd5a607ffb0",
+            "amount": 10000.0,
+            "currency": "usd",
+            "destination": "acct_partner_gamma",
+            "status": "completed",
+            "description": "Adjusted remaining balance transfer for Paul Zhang payment",
+            "created_at": "2026-03-13T18:39:47.938086"
+          },
+          "error": null,
+          "elapsed_s": 0.031
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-14T00:09:49.040738+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 0.0,
+            "total_payments": 50000.0,
+            "total_refunds": 0,
+            "total_disputes_lost": 0,
+            "total_transfers": 50000.0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-14T00:09:49.054829+05:30",
+          "tool_name": "list_transfers",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "transfers": [
+              {
+                "id": 3,
+                "stripe_transfer_id": "tr_290a9e6a9c454cd5a607ffb0",
+                "amount": 10000.0,
+                "currency": "usd",
+                "destination": "acct_partner_gamma",
+                "status": "completed",
+                "description": "Adjusted remaining balance transfer for Paul Zhang payment",
+                "created_at": "2026-03-13T18:39:47.938086"
+              },
+              {
+                "id": 2,
+                "stripe_transfer_id": "tr_ff8fbb0e896742af9f45ac94",
+                "amount": 20000.0,
+                "currency": "usd",
+                "destination": "acct_partner_beta",
+                "status": "completed",
+                "description": "Transfer 2 for Paul Zhang payment",
+                "created_at": "2026-03-13T18:39:45.535914"
+              },
+              {
+                "id": 1,
+                "stripe_transfer_id": "tr_49bfa15039294dc28cd13cca",
+                "amount": 20000.0,
+                "currency": "usd",
+                "destination": "acct_partner_alpha",
+                "status": "completed",
+                "description": "Transfer 1 for Paul Zhang payment",
+                "created_at": "2026-03-13T18:39:44.474603"
+              }
+            ],
+            "count": 3
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        }
+      ],
+      "total_steps": 9,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc11-paul@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_exists",
+            "destination": "acct_partner_alpha"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_amount",
+            "destination": "acct_partner_alpha",
+            "amount": 20000
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_exists",
+            "destination": "acct_partner_beta"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_amount",
+            "destination": "acct_partner_beta",
+            "amount": 20000
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_exists",
+            "destination": "acct_partner_gamma"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_amount",
+            "destination": "acct_partner_gamma",
+            "amount": 10000
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 0
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.9556,
+        "ground_truth": 1.0,
+        "efficiency": 0.6667,
+        "penalty": 0.0,
+        "total": 0.9389
+      }
+    },
+    {
+      "scenario_id": "full_lifecycle_stress_test",
+      "prompt": "Execute a comprehensive payment gateway stress test:\n\n1. Register three customers:\n   \u2022 'Rachel Torres' (sc12-rachel@test.com)\n   \u2022 'Sam Nakamura' (sc12-sam@test.com)\n   \u2022 'Tara Johansson' (sc12-tara@test.com)\n\n2. Process payments:\n   \u2022 Rachel: $500.00\n   \u2022 Sam: $300.07 (note this exact amount)\n   \u2022 Tara: $450.00 AND $200.00 (two separate payments)\n\n3. Confirm all four payments. Sam's payment may fail during processing \u2014 if it does, retry it with $300.00.\n\n4. Update Rachel's customer name to 'Rachel Torres-Vega'.\n\n5. Adjustments:\n   \u2022 Partial refund $150.00 from Rachel's payment\n   \u2022 Dispute Tara's FIRST payment ($450.00) for $200.00, reason 'duplicate', fight with evidence: 'Only one charge verified \u2014 receipt #TV-9981'\n   \u2022 Transfer $100.00 to 'acct_ops_reserve'\n\n6. Final checks: verify balance, list customers to confirm Rachel's name was updated, and audit all webhooks.",
+      "expected_tools": [
+        "create_customer",
+        "create_payment",
+        "confirm_payment",
+        "retry_payment",
+        "update_customer",
+        "create_refund",
+        "create_dispute",
+        "resolve_dispute",
+        "create_transfer",
+        "get_balance",
+        "list_customers",
+        "list_webhooks"
+      ],
+      "max_steps": 30,
+      "elapsed_s": 19.0,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-14T00:09:53.421728+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc12-rachel@test.com",
+            "name": "Rachel Torres"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc12-rachel@test.com",
+            "name": "Rachel Torres",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:39:53.429385",
+            "updated_at": "2026-03-13T18:39:53.429389"
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-14T00:09:53.439070+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc12-sam@test.com",
+            "name": "Sam Nakamura"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "email": "sc12-sam@test.com",
+            "name": "Sam Nakamura",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:39:53.446265",
+            "updated_at": "2026-03-13T18:39:53.446269"
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-14T00:09:53.456544+05:30",
+          "tool_name": "create_customer",
+          "arguments": {
+            "email": "sc12-tara@test.com",
+            "name": "Tara Johansson"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "email": "sc12-tara@test.com",
+            "name": "Tara Johansson",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:39:53.462862",
+            "updated_at": "2026-03-13T18:39:53.462866"
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-14T00:09:55.702708+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 50000,
+            "currency": "usd",
+            "customer_email": "sc12-rachel@test.com",
+            "description": "Rachel payment"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_9e1fc4150794400e8942af19",
+            "amount": 50000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc12-rachel@test.com",
+            "description": "Rachel payment",
+            "created_at": "2026-03-13T18:39:55.711305",
+            "updated_at": "2026-03-13T18:39:55.711311"
+          },
+          "error": null,
+          "elapsed_s": 0.02
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-14T00:09:55.722479+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 30007,
+            "currency": "usd",
+            "customer_email": "sc12-sam@test.com",
+            "description": "Sam payment"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_payment_intent_id": "pi_02bf14318bb841a397ba4523",
+            "amount": 30007.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc12-sam@test.com",
+            "description": "Sam payment",
+            "created_at": "2026-03-13T18:39:55.731042",
+            "updated_at": "2026-03-13T18:39:55.731045"
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-14T00:09:55.740163+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 45000,
+            "currency": "usd",
+            "customer_email": "sc12-tara@test.com",
+            "description": "Tara first payment"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "stripe_payment_intent_id": "pi_99b8b85518734745989addc7",
+            "amount": 45000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc12-tara@test.com",
+            "description": "Tara first payment",
+            "created_at": "2026-03-13T18:39:55.748659",
+            "updated_at": "2026-03-13T18:39:55.748662"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-14T00:09:55.758763+05:30",
+          "tool_name": "create_payment",
+          "arguments": {
+            "amount": 20000,
+            "currency": "usd",
+            "customer_email": "sc12-tara@test.com",
+            "description": "Tara second payment"
+          },
+          "success": true,
+          "result": {
+            "id": 4,
+            "stripe_payment_intent_id": "pi_23cd06e723394d788e721501",
+            "amount": 20000.0,
+            "currency": "usd",
+            "status": "requires_confirmation",
+            "customer_email": "sc12-tara@test.com",
+            "description": "Tara second payment",
+            "created_at": "2026-03-13T18:39:55.766585",
+            "updated_at": "2026-03-13T18:39:55.766591"
+          },
+          "error": null,
+          "elapsed_s": 0.017
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-14T00:09:57.230174+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_payment_intent_id": "pi_9e1fc4150794400e8942af19",
+            "amount": 50000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc12-rachel@test.com",
+            "description": "Rachel payment",
+            "created_at": "2026-03-13T18:39:55.711305",
+            "updated_at": "2026-03-13T18:39:57.243167"
+          },
+          "error": null,
+          "elapsed_s": 0.025
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-14T00:09:57.255177+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 2
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "stripe_payment_intent_id": "pi_02bf14318bb841a397ba4523",
+            "amount": 30007.0,
+            "currency": "usd",
+            "status": "failed",
+            "customer_email": "sc12-sam@test.com",
+            "description": "Sam payment",
+            "created_at": "2026-03-13T18:39:55.731042",
+            "updated_at": "2026-03-13T18:39:57.266822"
+          },
+          "error": null,
+          "elapsed_s": 0.023
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-14T00:09:57.278769+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 3
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "stripe_payment_intent_id": "pi_99b8b85518734745989addc7",
+            "amount": 45000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc12-tara@test.com",
+            "description": "Tara first payment",
+            "created_at": "2026-03-13T18:39:55.748659",
+            "updated_at": "2026-03-13T18:39:57.298186"
+          },
+          "error": null,
+          "elapsed_s": 0.03
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-14T00:09:57.309518+05:30",
+          "tool_name": "confirm_payment",
+          "arguments": {
+            "payment_id": 4
+          },
+          "success": true,
+          "result": {
+            "id": 4,
+            "stripe_payment_intent_id": "pi_23cd06e723394d788e721501",
+            "amount": 20000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc12-tara@test.com",
+            "description": "Tara second payment",
+            "created_at": "2026-03-13T18:39:55.766585",
+            "updated_at": "2026-03-13T18:39:57.322551"
+          },
+          "error": null,
+          "elapsed_s": 0.044
+        },
+        {
+          "step": 12,
+          "timestamp": "2026-03-14T00:09:58.488806+05:30",
+          "tool_name": "retry_payment",
+          "arguments": {
+            "payment_id": 2,
+            "amount": 30000,
+            "description": "Sam payment retry at requested amount"
+          },
+          "success": true,
+          "result": {
+            "id": 5,
+            "stripe_payment_intent_id": "pi_8878463d95324408855814f4",
+            "amount": 30000.0,
+            "currency": "usd",
+            "status": "succeeded",
+            "customer_email": "sc12-sam@test.com",
+            "description": "Sam payment retry at requested amount",
+            "created_at": "2026-03-13T18:39:58.501126",
+            "updated_at": "2026-03-13T18:39:58.515086"
+          },
+          "error": null,
+          "elapsed_s": 0.035
+        },
+        {
+          "step": 13,
+          "timestamp": "2026-03-14T00:10:01.239378+05:30",
+          "tool_name": "update_customer",
+          "arguments": {
+            "customer_id": 1,
+            "name": "Rachel Torres-Vega"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "email": "sc12-rachel@test.com",
+            "name": "Rachel Torres-Vega",
+            "phone": null,
+            "address": null,
+            "created_at": "2026-03-13T18:39:53.429385",
+            "updated_at": "2026-03-13T18:40:01.249544"
+          },
+          "error": null,
+          "elapsed_s": 0.021
+        },
+        {
+          "step": 14,
+          "timestamp": "2026-03-14T00:10:01.260687+05:30",
+          "tool_name": "create_refund",
+          "arguments": {
+            "payment_intent_id": 1,
+            "amount": 15000,
+            "reason": "Partial refund per stress test"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 1,
+            "stripe_refund_id": "re_c7526373169f4fbc8702cfe6",
+            "amount": 15000.0,
+            "status": "succeeded",
+            "reason": "Partial refund per stress test",
+            "created_at": "2026-03-13T18:40:01.278470"
+          },
+          "error": null,
+          "elapsed_s": 0.029
+        },
+        {
+          "step": 15,
+          "timestamp": "2026-03-14T00:10:01.290504+05:30",
+          "tool_name": "create_dispute",
+          "arguments": {
+            "payment_intent_id": 3,
+            "reason": "duplicate",
+            "amount": 20000
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 3,
+            "stripe_dispute_id": "dp_29cab13b1fd4416385268a77",
+            "amount": 20000.0,
+            "currency": "usd",
+            "status": "open",
+            "reason": "duplicate",
+            "evidence": null,
+            "created_at": "2026-03-13T18:40:01.305579",
+            "resolved_at": null
+          },
+          "error": null,
+          "elapsed_s": 0.037
+        },
+        {
+          "step": 16,
+          "timestamp": "2026-03-14T00:10:01.327605+05:30",
+          "tool_name": "create_transfer",
+          "arguments": {
+            "amount": 10000,
+            "destination": "acct_ops_reserve",
+            "description": "Stress test reserve transfer"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "stripe_transfer_id": "tr_e105c572a8734b60a097417b",
+            "amount": 10000.0,
+            "currency": "usd",
+            "destination": "acct_ops_reserve",
+            "status": "completed",
+            "description": "Stress test reserve transfer",
+            "created_at": "2026-03-13T18:40:01.346186"
+          },
+          "error": null,
+          "elapsed_s": 0.029
+        },
+        {
+          "step": 17,
+          "timestamp": "2026-03-14T00:10:02.501133+05:30",
+          "tool_name": "resolve_dispute",
+          "arguments": {
+            "dispute_id": 1,
+            "evidence": "Only one charge verified \u2014 receipt #TV-9981",
+            "accept_loss": false
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "payment_intent_id": 3,
+            "stripe_dispute_id": "dp_29cab13b1fd4416385268a77",
+            "amount": 20000.0,
+            "currency": "usd",
+            "status": "won",
+            "reason": "duplicate",
+            "evidence": "Only one charge verified \u2014 receipt #TV-9981",
+            "created_at": "2026-03-13T18:40:01.305579",
+            "resolved_at": "2026-03-13T18:40:02.513464"
+          },
+          "error": null,
+          "elapsed_s": 0.028
+        },
+        {
+          "step": 18,
+          "timestamp": "2026-03-14T00:10:03.822398+05:30",
+          "tool_name": "get_balance",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "balance": 120000.0,
+            "total_payments": 145000.0,
+            "total_refunds": 15000.0,
+            "total_disputes_lost": 0,
+            "total_transfers": 10000.0,
+            "currency": "usd"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 19,
+          "timestamp": "2026-03-14T00:10:03.840985+05:30",
+          "tool_name": "list_customers",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "customers": [
+              {
+                "id": 3,
+                "email": "sc12-tara@test.com",
+                "name": "Tara Johansson",
+                "phone": null,
+                "address": null,
+                "created_at": "2026-03-13T18:39:53.462862",
+                "updated_at": "2026-03-13T18:39:53.462866"
+              },
+              {
+                "id": 2,
+                "email": "sc12-sam@test.com",
+                "name": "Sam Nakamura",
+                "phone": null,
+                "address": null,
+                "created_at": "2026-03-13T18:39:53.446265",
+                "updated_at": "2026-03-13T18:39:53.446269"
+              },
+              {
+                "id": 1,
+                "email": "sc12-rachel@test.com",
+                "name": "Rachel Torres-Vega",
+                "phone": null,
+                "address": null,
+                "created_at": "2026-03-13T18:39:53.429385",
+                "updated_at": "2026-03-13T18:40:01.249544"
+              }
+            ],
+            "count": 3
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 20,
+          "timestamp": "2026-03-14T00:10:03.854499+05:30",
+          "tool_name": "list_webhooks",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "events": [
+              {
+                "id": 9,
+                "stripe_event_id": "evt_44b75b9394a4465f855869f6",
+                "event_type": "charge.dispute.won",
+                "payload": "{\"id\": \"dp_29cab13b1fd4416385268a77\", \"object\": \"dispute\", \"amount\": 20000, \"currency\": \"usd\", \"payment_intent\": \"pi_99b8b85518734745989addc7\", \"reason\": \"duplicate\", \"status\": \"won\", \"evidence\": \"Only one charge verified \\u2014 receipt #TV-9981\", \"created\": 1773427201, \"resolved_at\": 1773427202}",
+                "processed": true,
+                "created_at": "2026-03-13T18:40:02.515551"
+              },
+              {
+                "id": 8,
+                "stripe_event_id": "evt_d888d3aa9b064b47b07a0dcd",
+                "event_type": "transfer.created",
+                "payload": "{\"id\": \"tr_e105c572a8734b60a097417b\", \"object\": \"transfer\", \"amount\": 10000, \"currency\": \"usd\", \"destination\": \"acct_ops_reserve\", \"description\": \"Stress test reserve transfer\", \"status\": \"completed\", \"created\": 1773427201}",
+                "processed": true,
+                "created_at": "2026-03-13T18:40:01.347339"
+              },
+              {
+                "id": 7,
+                "stripe_event_id": "evt_b46e41caf52343d0b7126266",
+                "event_type": "charge.dispute.created",
+                "payload": "{\"id\": \"dp_29cab13b1fd4416385268a77\", \"object\": \"dispute\", \"amount\": 20000, \"currency\": \"usd\", \"payment_intent\": \"pi_99b8b85518734745989addc7\", \"reason\": \"duplicate\", \"status\": \"open\", \"evidence\": null, \"created\": 1773427201, \"payment_intent_data\": {\"id\": \"pi_99b8b85518734745989addc7\", \"object\": \"payment_intent\", \"amount\": 45000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc12-tara@test.com\", \"description\": \"Tara first payment\", \"metadata\": {}, \"created\": 1773427195, \"confirmed_at\": 1773427197}}",
+                "processed": true,
+                "created_at": "2026-03-13T18:40:01.306872"
+              },
+              {
+                "id": 6,
+                "stripe_event_id": "evt_0f4a7ba1f8354cdb86e9b34c",
+                "event_type": "charge.refunded",
+                "payload": "{\"id\": \"re_c7526373169f4fbc8702cfe6\", \"object\": \"refund\", \"amount\": 15000, \"currency\": \"usd\", \"payment_intent\": \"pi_9e1fc4150794400e8942af19\", \"status\": \"succeeded\", \"created\": 1773427201, \"payment_intent_data\": {\"id\": \"pi_9e1fc4150794400e8942af19\", \"object\": \"payment_intent\", \"amount\": 50000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc12-rachel@test.com\", \"description\": \"Rachel payment\", \"metadata\": {}, \"created\": 1773427195, \"confirmed_at\": 1773427197}}",
+                "processed": true,
+                "created_at": "2026-03-13T18:40:01.279641"
+              },
+              {
+                "id": 5,
+                "stripe_event_id": "evt_c53820b8b9d5418fad853f6b",
+                "event_type": "payment_intent.succeeded",
+                "payload": "{\"id\": \"pi_8878463d95324408855814f4\", \"object\": \"payment_intent\", \"amount\": 30000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc12-sam@test.com\", \"description\": \"Sam payment retry at requested amount\", \"metadata\": {}, \"created\": 1773427198, \"confirmed_at\": 1773427198}",
+                "processed": true,
+                "created_at": "2026-03-13T18:39:58.516201"
+              },
+              {
+                "id": 4,
+                "stripe_event_id": "evt_aa5a20aded4848a383e11fc9",
+                "event_type": "payment_intent.succeeded",
+                "payload": "{\"id\": \"pi_23cd06e723394d788e721501\", \"object\": \"payment_intent\", \"amount\": 20000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc12-tara@test.com\", \"description\": \"Tara second payment\", \"metadata\": {}, \"created\": 1773427195, \"confirmed_at\": 1773427197}",
+                "processed": true,
+                "created_at": "2026-03-13T18:39:57.323580"
+              },
+              {
+                "id": 3,
+                "stripe_event_id": "evt_70d68f017b6a428e86e836b4",
+                "event_type": "payment_intent.succeeded",
+                "payload": "{\"id\": \"pi_99b8b85518734745989addc7\", \"object\": \"payment_intent\", \"amount\": 45000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc12-tara@test.com\", \"description\": \"Tara first payment\", \"metadata\": {}, \"created\": 1773427195, \"confirmed_at\": 1773427197}",
+                "processed": true,
+                "created_at": "2026-03-13T18:39:57.299375"
+              },
+              {
+                "id": 2,
+                "stripe_event_id": "evt_3c20b2dbc32e413aaf4c7d1b",
+                "event_type": "payment_intent.payment_failed",
+                "payload": "{\"id\": \"pi_02bf14318bb841a397ba4523\", \"object\": \"payment_intent\", \"amount\": 30007, \"currency\": \"usd\", \"status\": \"failed\", \"customer_email\": \"sc12-sam@test.com\", \"description\": \"Sam payment\", \"metadata\": {}, \"created\": 1773427195, \"confirmed_at\": 1773427197}",
+                "processed": true,
+                "created_at": "2026-03-13T18:39:57.270290"
+              },
+              {
+                "id": 1,
+                "stripe_event_id": "evt_433c704e8d654bcdae0a0dd6",
+                "event_type": "payment_intent.succeeded",
+                "payload": "{\"id\": \"pi_9e1fc4150794400e8942af19\", \"object\": \"payment_intent\", \"amount\": 50000, \"currency\": \"usd\", \"status\": \"succeeded\", \"customer_email\": \"sc12-rachel@test.com\", \"description\": \"Rachel payment\", \"metadata\": {}, \"created\": 1773427195, \"confirmed_at\": 1773427197}",
+                "processed": true,
+                "created_at": "2026-03-13T18:39:57.246973"
+              }
+            ],
+            "count": 9
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        }
+      ],
+      "total_steps": 20,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc12-rachel@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc12-sam@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "customer_exists",
+            "email": "sc12-tara@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "customer_name",
+            "email": "sc12-rachel@test.com",
+            "expected_name": "Rachel Torres-Vega"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "refund_exists",
+            "customer_email": "sc12-rachel@test.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "dispute_status",
+            "customer_email": "sc12-tara@test.com",
+            "status": "won"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_exists",
+            "destination": "acct_ops_reserve"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "transfer_amount",
+            "destination": "acct_ops_reserve",
+            "amount": 10000
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "balance_equals",
+            "amount": 120000
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_received",
+            "event_type": "payment_intent.payment_failed"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "webhook_count_gte",
+            "count": 7
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 1.0,
+        "ground_truth": 1.0,
+        "efficiency": 0.6,
+        "penalty": 0.0,
+        "total": 0.94
+      }
+    }
+  ],
+  "avg_reward": 0.9491
+}

@@ -756,7 +756,10 @@ Examples:
         max_workers = min(args.parallel, len(models))
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {}
-            for model in models:
+            for idx, model in enumerate(models):
+                # Stagger WebSocket connections to avoid race conditions
+                if idx > 0:
+                    time.sleep(1)
                 future = executor.submit(
                     _run_single_model,
                     model=model,

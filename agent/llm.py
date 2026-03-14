@@ -37,6 +37,9 @@ class LLMClient:
     Ollama model — LiteLLM handles the translation.
     """
 
+    # Models that only support temperature=1 and need higher max_tokens
+    _REASONING_MODELS = {"o3-pro", "o3-mini", "o3", "o1", "o1-mini", "o1-pro", "gpt-5"}
+
     def __init__(
         self,
         model: str,
@@ -44,8 +47,16 @@ class LLMClient:
         max_tokens: int = 1024,
     ):
         self.model = model
-        self.temperature = temperature
-        self.max_tokens = max_tokens
+
+        # Reasoning / O-series models require temperature=1 and higher token limits
+        if model in self._REASONING_MODELS:
+            self.temperature = 1.0
+            self.max_tokens = max(max_tokens, 4096)
+            if temperature != 1.0:
+                logger.info(f"Model {model} requires temperature=1.0, overriding from {temperature}")
+        else:
+            self.temperature = temperature
+            self.max_tokens = max_tokens
 
     def chat(
         self,
