@@ -34,7 +34,7 @@ class BrowserEnvironment(MCPEnvironment):
     SUPPORTS_CONCURRENT_SESSIONS = True
 
     def __init__(self):
-        mcp = FastMCP("browser_gym")
+        mcp = FastMCP("browser_env")
         self._session_id = None
         self._current_route = "/"
         self._page_content = {}
@@ -441,7 +441,7 @@ class BrowserEnvironment(MCPEnvironment):
 
     def get_metadata(self) -> EnvironmentMetadata:
         return EnvironmentMetadata(
-            name="browser_gym",
+            name="browser_env",
             version="0.1.0",
             description=(
                 "Browser Gym — navigate, interact with, and assert on a full-stack "

@@ -1,0 +1,4679 @@
+{
+  "run_id": "run_browser_openenv_final",
+  "model": "gpt-5",
+  "gym": "browser",
+  "gym_version": "0.1.0",
+  "timestamp": "2026-03-15T01:00:38.794355+05:30",
+  "temperature": 1.0,
+  "reward_mode": "openenv",
+  "total_elapsed_s": 741.75,
+  "total_scenarios": 12,
+  "scenarios": [
+    {
+      "scenario_id": "coupon_threshold_trap",
+      "prompt": "Register a new account with name 'Threshold Tester', email 'sc1@browser.test', password 'Sc1Pass!'. Your task: build a cart containing exactly the CHEAPEST product from each of the four categories (Electronics, Clothing, Books, Home). Search each category to identify the cheapest item \u2014 do not guess.\n\nAfter adding all four cheapest items, apply the SAVE20 coupon code at checkout. SAVE20 offers 20% off but requires a minimum order of $100. If the coupon is rejected, determine exactly how much your subtotal falls short, add a Cotton T-Shirt (product ID 5, $19.99) to push the total over the threshold, and then checkout with SAVE20 applied.\n\nShipping: name='Threshold Tester', address='100 Coupon Lane', city='Discount City', zip='10020'.\n\nExpected outcome: 5 items in the order, SAVE20 coupon applied, discount is exactly 20% of the pre-discount subtotal.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "search_products",
+        "add_to_cart",
+        "checkout"
+      ],
+      "max_steps": 25,
+      "elapsed_s": 22.93,
+      "steps": [],
+      "total_steps": 0,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "user_exists",
+            "email": "sc1@browser.test"
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "email": "sc1@browser.test"
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_coupon",
+            "email": "sc1@browser.test",
+            "order_index": 0,
+            "value": "SAVE20"
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_discount",
+            "email": "sc1@browser.test",
+            "order_index": 0,
+            "value": 23.79
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_total",
+            "email": "sc1@browser.test",
+            "order_index": 0,
+            "value": 95.16
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_item_count",
+            "email": "sc1@browser.test",
+            "order_index": 0,
+            "expected": 5
+          },
+          "passed": false
+        }
+      ],
+      "reward": {
+        "structural": 0.0,
+        "ground_truth": 0.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.0
+      }
+    },
+    {
+      "scenario_id": "stock_deplete_cancel_reorder",
+      "prompt": "Login as Bob (email: bob@example.com, password: securepass).\n\nThe book 'The Pragmatic Programmer' (product ID 12) has only 1 copy left in stock. Add it to your cart (quantity 1) and checkout immediately with shipping: name='Bob Smith', address='456 Oak Ave', city='Shelbyville', zip='62565'.\n\nAfter the order is placed, navigate to the order detail page and cancel the order. After cancellation, navigate to the product page for 'The Pragmatic Programmer' and verify the stock has been restored to 1.\n\nNow add the same book to your cart again (quantity 1) and place a SECOND order with the same shipping details. Do NOT cancel this order.\n\nAt the end you should have exactly 2 orders: the first one cancelled, the second one pending. The product stock should be 0.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "add_to_cart",
+        "checkout",
+        "click_element",
+        "get_page_content",
+        "assert_text_visible"
+      ],
+      "max_steps": 30,
+      "elapsed_s": 93.85,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-15T00:48:55.026815+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/login"
+          },
+          "success": true,
+          "result": {
+            "page": "login",
+            "title": "Login",
+            "elements": {
+              "form": {
+                "id": "login-form",
+                "fields": [
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "login-submit",
+                  "text": "Log In"
+                }
+              },
+              "register_link": {
+                "text": "Don't have an account? Register",
+                "href": "/register"
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-15T00:49:05.607069+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "bob@example.com"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/login",
+            "filled_fields": [
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-15T00:49:07.393306+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "securepass"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/login",
+            "filled_fields": [
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-15T00:49:08.373782+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "login-form"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "name": "Bob Smith",
+            "email": "bob@example.com",
+            "token": "Mg=="
+          },
+          "error": null,
+          "elapsed_s": 0.071
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-15T00:49:16.613427+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 12,
+            "quantity": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "product_id": 12,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-15T00:49:18.584566+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "Bob Smith",
+            "shipping_address": "456 Oak Ave",
+            "shipping_city": "Shelbyville",
+            "shipping_zip": "62565"
+          },
+          "success": true,
+          "result": {
+            "order_id": 1,
+            "total": 42.99,
+            "discount": 0,
+            "coupon_code": "",
+            "items": 1,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.018
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-15T00:49:23.673508+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/orders"
+          },
+          "success": true,
+          "result": {
+            "page": "order_history",
+            "title": "Order History",
+            "elements": {
+              "orders": [
+                {
+                  "id": "order-1",
+                  "order_id": 1,
+                  "total": 42.99,
+                  "status": "pending",
+                  "created_at": "2026-03-14 19:19:18",
+                  "coupon_code": "",
+                  "discount": 0,
+                  "view_link": {
+                    "href": "/orders/1",
+                    "text": "View Details"
+                  }
+                }
+              ],
+              "count": 1
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.024
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-15T00:49:25.579135+05:30",
+          "tool_name": "click_element",
+          "arguments": {
+            "element_id": "order-1"
+          },
+          "success": true,
+          "result": {
+            "element": {
+              "id": "order-1",
+              "order_id": 1,
+              "total": 42.99,
+              "status": "pending",
+              "created_at": "2026-03-14 19:19:18",
+              "coupon_code": "",
+              "discount": 0,
+              "view_link": {
+                "href": "/orders/1",
+                "text": "View Details"
+              }
+            },
+            "note": "Element found but has no clickable action"
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-15T00:49:34.561292+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/orders/1"
+          },
+          "success": true,
+          "result": {
+            "page": "order_detail",
+            "title": "Order #1",
+            "elements": {
+              "order": {
+                "id": 1,
+                "total": 42.99,
+                "status": "pending",
+                "shipping_name": "Bob Smith",
+                "shipping_address": "456 Oak Ave",
+                "shipping_city": "Shelbyville",
+                "shipping_zip": "62565",
+                "coupon_code": "",
+                "discount": 0,
+                "created_at": "2026-03-14 19:19:18"
+              },
+              "items": [
+                {
+                  "product_id": 12,
+                  "name": "The Pragmatic Programmer",
+                  "quantity": 1,
+                  "price": 42.99,
+                  "subtotal": 42.99
+                }
+              ],
+              "cancel_button": {
+                "id": "cancel-order",
+                "text": "Cancel Order"
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-15T00:49:35.803666+05:30",
+          "tool_name": "click_element",
+          "arguments": {
+            "element_id": "cancel-order"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "status": "cancelled"
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-15T00:49:36.928249+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/products/12"
+          },
+          "success": true,
+          "result": {
+            "page": "product_detail",
+            "title": "The Pragmatic Programmer",
+            "elements": {
+              "product": {
+                "id": 12,
+                "name": "The Pragmatic Programmer",
+                "description": "Your journey to mastery, 20th anniversary edition",
+                "price": 42.99,
+                "stock": 1,
+                "category": "Books",
+                "image_url": "/img/pragmatic.jpg"
+              },
+              "add_to_cart_button": {
+                "id": "add-to-cart-12",
+                "text": "Add to Cart",
+                "disabled": false
+              },
+              "add_to_wishlist_button": {
+                "id": "add-to-wishlist-12",
+                "text": "Add to Wishlist"
+              },
+              "reviews_section": {
+                "avg_rating": null,
+                "count": 0,
+                "reviews": []
+              },
+              "review_form": {
+                "id": "review-form",
+                "fields": [
+                  {
+                    "name": "rating",
+                    "type": "number",
+                    "label": "Rating (1-5)",
+                    "min": 1,
+                    "max": 5,
+                    "required": true
+                  },
+                  {
+                    "name": "comment",
+                    "type": "textarea",
+                    "label": "Comment"
+                  }
+                ],
+                "submit_button": {
+                  "id": "submit-review",
+                  "text": "Submit Review"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 12,
+          "timestamp": "2026-03-15T00:49:47.888236+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 12,
+            "quantity": 1
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "product_id": 12,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 13,
+          "timestamp": "2026-03-15T00:49:49.847917+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "Bob Smith",
+            "shipping_address": "456 Oak Ave",
+            "shipping_city": "Shelbyville",
+            "shipping_zip": "62565"
+          },
+          "success": true,
+          "result": {
+            "order_id": 2,
+            "total": 42.99,
+            "discount": 0,
+            "coupon_code": "",
+            "items": 1,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 14,
+          "timestamp": "2026-03-15T00:49:50.837853+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/orders"
+          },
+          "success": true,
+          "result": {
+            "page": "order_history",
+            "title": "Order History",
+            "elements": {
+              "orders": [
+                {
+                  "id": "order-2",
+                  "order_id": 2,
+                  "total": 42.99,
+                  "status": "pending",
+                  "created_at": "2026-03-14 19:19:49",
+                  "coupon_code": "",
+                  "discount": 0,
+                  "view_link": {
+                    "href": "/orders/2",
+                    "text": "View Details"
+                  }
+                },
+                {
+                  "id": "order-1",
+                  "order_id": 1,
+                  "total": 42.99,
+                  "status": "cancelled",
+                  "created_at": "2026-03-14 19:19:18",
+                  "coupon_code": "",
+                  "discount": 0,
+                  "view_link": {
+                    "href": "/orders/1",
+                    "text": "View Details"
+                  }
+                }
+              ],
+              "count": 2
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 15,
+          "timestamp": "2026-03-15T00:50:01.598184+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/products/12"
+          },
+          "success": true,
+          "result": {
+            "page": "product_detail",
+            "title": "The Pragmatic Programmer",
+            "elements": {
+              "product": {
+                "id": 12,
+                "name": "The Pragmatic Programmer",
+                "description": "Your journey to mastery, 20th anniversary edition",
+                "price": 42.99,
+                "stock": 0,
+                "category": "Books",
+                "image_url": "/img/pragmatic.jpg"
+              },
+              "add_to_cart_button": {
+                "id": "add-to-cart-12",
+                "text": "Add to Cart",
+                "disabled": true
+              },
+              "add_to_wishlist_button": {
+                "id": "add-to-wishlist-12",
+                "text": "Add to Wishlist"
+              },
+              "reviews_section": {
+                "avg_rating": null,
+                "count": 0,
+                "reviews": []
+              },
+              "review_form": {
+                "id": "review-form",
+                "fields": [
+                  {
+                    "name": "rating",
+                    "type": "number",
+                    "label": "Rating (1-5)",
+                    "min": 1,
+                    "max": 5,
+                    "required": true
+                  },
+                  {
+                    "name": "comment",
+                    "type": "textarea",
+                    "label": "Comment"
+                  }
+                ],
+                "submit_button": {
+                  "id": "submit-review",
+                  "text": "Submit Review"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        }
+      ],
+      "total_steps": 15,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "order_count",
+            "email": "bob@example.com",
+            "expected": 2
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_status",
+            "email": "bob@example.com",
+            "order_index": 0,
+            "value": "pending"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_status",
+            "email": "bob@example.com",
+            "order_index": 1,
+            "value": "cancelled"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_stock",
+            "product_id": 12,
+            "value": 0
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_item_count",
+            "email": "bob@example.com",
+            "order_index": 0,
+            "expected": 1
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.7422,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.8969
+      }
+    },
+    {
+      "scenario_id": "false_price_optimal_coupon",
+      "prompt": "Login as Alice (email: alice@example.com, password: password123).\n\nAdd these three products to your cart:\n  1. Mechanical Keyboard (product ID 3) \u2014 from Electronics, $129.99\n  2. Running Shoes (product ID 7) \u2014 from Clothing, $89.99\n  3. The cheapest book in the store \u2014 I believe it costs around $24.99\n\nIMPORTANT: Do NOT trust the price I gave for the cheapest book. Search the Books category and verify the actual cheapest book's name and price before adding it.\n\nAfter adding all three items, your cart will be over $100. You have two valid coupons available:\n  - SAVE10: 10% off (minimum order $50)\n  - SAVE20: 20% off (minimum order $100)\n\nCalculate which coupon saves you more money. Apply the BETTER coupon and checkout with shipping: name='Alice Johnson', address='123 Main St', city='Springfield', zip='62704'.\n\nThe order total should reflect exactly 20% off the correct subtotal.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "search_products",
+        "add_to_cart",
+        "checkout"
+      ],
+      "max_steps": 20,
+      "elapsed_s": 62.25,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-15T00:50:24.169644+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/login"
+          },
+          "success": true,
+          "result": {
+            "page": "login",
+            "title": "Login",
+            "elements": {
+              "form": {
+                "id": "login-form",
+                "fields": [
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "login-submit",
+                  "text": "Log In"
+                }
+              },
+              "register_link": {
+                "text": "Don't have an account? Register",
+                "href": "/register"
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-15T00:50:35.998481+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "alice@example.com"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/login",
+            "filled_fields": [
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-15T00:50:36.989389+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "password123"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/login",
+            "filled_fields": [
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-15T00:50:37.988534+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "login-form"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "name": "Alice Johnson",
+            "email": "alice@example.com",
+            "token": "MQ=="
+          },
+          "error": null,
+          "elapsed_s": 0.069
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-15T00:50:50.635148+05:30",
+          "tool_name": "search_products",
+          "arguments": {
+            "category": "Books",
+            "sort": "price_asc"
+          },
+          "success": true,
+          "result": {
+            "products": [
+              {
+                "id": 9,
+                "name": "JavaScript: The Good Parts",
+                "description": "A deep dive into the best features of JavaScript",
+                "price": 29.99,
+                "image_url": "/img/jsbook.jpg",
+                "stock": 35,
+                "category": "Books",
+                "created_at": "2026-03-14 19:20:13"
+              },
+              {
+                "id": 10,
+                "name": "Clean Code",
+                "description": "A handbook of agile software craftsmanship by Robert C. Martin",
+                "price": 39.99,
+                "image_url": "/img/cleancode.jpg",
+                "stock": 20,
+                "category": "Books",
+                "created_at": "2026-03-14 19:20:13"
+              },
+              {
+                "id": 12,
+                "name": "The Pragmatic Programmer",
+                "description": "Your journey to mastery, 20th anniversary edition",
+                "price": 42.99,
+                "image_url": "/img/pragmatic.jpg",
+                "stock": 1,
+                "category": "Books",
+                "created_at": "2026-03-14 19:20:13"
+              },
+              {
+                "id": 11,
+                "name": "Design Patterns",
+                "description": "Elements of reusable object-oriented software",
+                "price": 49.99,
+                "image_url": "/img/patterns.jpg",
+                "stock": 10,
+                "category": "Books",
+                "created_at": "2026-03-14 19:20:13"
+              }
+            ],
+            "total": 4,
+            "page": 1,
+            "limit": 12,
+            "pages": 1
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-15T00:51:02.366423+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 3
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "product_id": 3,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-15T00:51:02.380986+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 7
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "product_id": 7,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-15T00:51:02.395510+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 9
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "product_id": 9,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-15T00:51:03.506017+05:30",
+          "tool_name": "get_cart",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "items": [
+              {
+                "id": 1,
+                "product_id": 3,
+                "quantity": 1,
+                "name": "Mechanical Keyboard",
+                "price": 129.99,
+                "stock": 15,
+                "image_url": "/img/keyboard.jpg",
+                "subtotal": 129.99
+              },
+              {
+                "id": 2,
+                "product_id": 7,
+                "quantity": 1,
+                "name": "Running Shoes",
+                "price": 89.99,
+                "stock": 30,
+                "image_url": "/img/shoes.jpg",
+                "subtotal": 89.99
+              },
+              {
+                "id": 3,
+                "product_id": 9,
+                "quantity": 1,
+                "name": "JavaScript: The Good Parts",
+                "price": 29.99,
+                "stock": 35,
+                "image_url": "/img/jsbook.jpg",
+                "subtotal": 29.99
+              }
+            ],
+            "count": 3,
+            "total": 249.97
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-15T00:51:10.351817+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "Alice Johnson",
+            "shipping_address": "123 Main St",
+            "shipping_city": "Springfield",
+            "shipping_zip": "62704",
+            "coupon_code": "SAVE20"
+          },
+          "success": true,
+          "result": {
+            "order_id": 1,
+            "total": 199.98,
+            "discount": 49.99,
+            "coupon_code": "SAVE20",
+            "items": 3,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        }
+      ],
+      "total_steps": 10,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "order_exists",
+            "email": "alice@example.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_coupon",
+            "email": "alice@example.com",
+            "order_index": 0,
+            "value": "SAVE20"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_discount",
+            "email": "alice@example.com",
+            "order_index": 0,
+            "value": 49.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_total",
+            "email": "alice@example.com",
+            "order_index": 0,
+            "value": 199.98
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_item_count",
+            "email": "alice@example.com",
+            "order_index": 0,
+            "expected": 3
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.74,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.896
+      }
+    },
+    {
+      "scenario_id": "cross_user_cart_isolation",
+      "prompt": "This scenario tests cart isolation between different users. Follow each step carefully \u2014 the authentication context changes implicitly.\n\nSTEP 1: Register user A \u2014 name='User Alpha', email='sc4a@browser.test', password='Sc4PassA!'\nSTEP 2: Add Wireless Headphones (product ID 1) and Desk Lamp (product ID 13) to User A's cart. DO NOT checkout yet.\nSTEP 3: Register user B \u2014 name='User Beta', email='sc4b@browser.test', password='Sc4PassB!'\n\u26a0 IMPORTANT: After registering user B, you are now logged in as user B. User A's session is gone.\nSTEP 4: Get user B's cart and verify it is EMPTY (0 items).\nSTEP 5: Add Coffee Mug Set (product ID 14) to user B's cart and checkout with shipping: name='User Beta', address='200 Beta Blvd', city='BetaTown', zip='20002'.\nSTEP 6: Now login as user A \u2014 navigate to login page, enter email 'sc4a@browser.test', password 'Sc4PassA!', submit the login form.\nSTEP 7: Get user A's cart. It should STILL contain exactly 2 items (Wireless Headphones and Desk Lamp) \u2014 user B's checkout did not affect it.\nSTEP 8: Checkout user A's cart with shipping: name='User Alpha', address='100 Alpha Ave', city='AlphaTown', zip='10001'.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "add_to_cart",
+        "get_cart",
+        "checkout"
+      ],
+      "max_steps": 35,
+      "elapsed_s": 63.49,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-15T00:51:30.009475+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/register"
+          },
+          "success": true,
+          "result": {
+            "page": "register",
+            "title": "Create Account",
+            "elements": {
+              "form": {
+                "id": "register-form",
+                "fields": [
+                  {
+                    "name": "name",
+                    "type": "text",
+                    "label": "Full Name",
+                    "required": true
+                  },
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true,
+                    "minLength": 6
+                  },
+                  {
+                    "name": "confirm_password",
+                    "type": "password",
+                    "label": "Confirm Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "register-submit",
+                  "text": "Create Account"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-15T00:51:36.949155+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "name",
+            "value": "User Alpha"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "name",
+            "page": "/register",
+            "filled_fields": [
+              "name"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-15T00:51:38.048988+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "sc4a@browser.test"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-15T00:51:39.150276+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "Sc4PassA!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-15T00:51:40.248017+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "confirm_password",
+            "value": "Sc4PassA!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "confirm_password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password",
+              "confirm_password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-15T00:51:41.293734+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "register-form"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "name": "User Alpha",
+            "email": "sc4a@browser.test",
+            "token": "Mw=="
+          },
+          "error": null,
+          "elapsed_s": 0.073
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-15T00:51:51.616021+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "product_id": 1,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-15T00:51:52.652895+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 13
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "product_id": 13,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-15T00:51:58.458332+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/register"
+          },
+          "success": true,
+          "result": {
+            "page": "register",
+            "title": "Create Account",
+            "elements": {
+              "form": {
+                "id": "register-form",
+                "fields": [
+                  {
+                    "name": "name",
+                    "type": "text",
+                    "label": "Full Name",
+                    "required": true
+                  },
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true,
+                    "minLength": 6
+                  },
+                  {
+                    "name": "confirm_password",
+                    "type": "password",
+                    "label": "Confirm Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "register-submit",
+                  "text": "Create Account"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-15T00:51:59.527796+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "name",
+            "value": "User Beta"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "name",
+            "page": "/register",
+            "filled_fields": [
+              "name"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-15T00:52:00.798435+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "sc4b@browser.test"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 12,
+          "timestamp": "2026-03-15T00:52:02.446604+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "Sc4PassB!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 13,
+          "timestamp": "2026-03-15T00:52:03.611329+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "confirm_password",
+            "value": "Sc4PassB!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "confirm_password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password",
+              "confirm_password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 14,
+          "timestamp": "2026-03-15T00:52:04.650827+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "register-form"
+          },
+          "success": true,
+          "result": {
+            "id": 4,
+            "name": "User Beta",
+            "email": "sc4b@browser.test",
+            "token": "NA=="
+          },
+          "error": null,
+          "elapsed_s": 0.071
+        },
+        {
+          "step": 15,
+          "timestamp": "2026-03-15T00:52:05.762817+05:30",
+          "tool_name": "get_cart",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "items": [],
+            "count": 0,
+            "total": 0
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 16,
+          "timestamp": "2026-03-15T00:52:06.815164+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 14
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "product_id": 14,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 17,
+          "timestamp": "2026-03-15T00:52:08.081804+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "User Beta",
+            "shipping_address": "200 Beta Blvd",
+            "shipping_city": "BetaTown",
+            "shipping_zip": "20002"
+          },
+          "success": true,
+          "result": {
+            "order_id": 1,
+            "total": 24.99,
+            "discount": 0,
+            "coupon_code": "",
+            "items": 1,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 18,
+          "timestamp": "2026-03-15T00:52:09.127360+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/login"
+          },
+          "success": true,
+          "result": {
+            "page": "login",
+            "title": "Login",
+            "elements": {
+              "form": {
+                "id": "login-form",
+                "fields": [
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "login-submit",
+                  "text": "Log In"
+                }
+              },
+              "register_link": {
+                "text": "Don't have an account? Register",
+                "href": "/register"
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 19,
+          "timestamp": "2026-03-15T00:52:10.305369+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "sc4a@browser.test"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/login",
+            "filled_fields": [
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 20,
+          "timestamp": "2026-03-15T00:52:11.598372+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "Sc4PassA!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/login",
+            "filled_fields": [
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 21,
+          "timestamp": "2026-03-15T00:52:12.641027+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "login-form"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "name": "User Alpha",
+            "email": "sc4a@browser.test",
+            "token": "Mw=="
+          },
+          "error": null,
+          "elapsed_s": 0.077
+        },
+        {
+          "step": 22,
+          "timestamp": "2026-03-15T00:52:13.894426+05:30",
+          "tool_name": "get_cart",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "items": [
+              {
+                "id": 1,
+                "product_id": 1,
+                "quantity": 1,
+                "name": "Wireless Headphones",
+                "price": 79.99,
+                "stock": 25,
+                "image_url": "/img/headphones.jpg",
+                "subtotal": 79.99
+              },
+              {
+                "id": 2,
+                "product_id": 13,
+                "quantity": 1,
+                "name": "Desk Lamp",
+                "price": 32.99,
+                "stock": 45,
+                "image_url": "/img/lamp.jpg",
+                "subtotal": 32.99
+              }
+            ],
+            "count": 2,
+            "total": 112.98
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 23,
+          "timestamp": "2026-03-15T00:52:15.190140+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "User Alpha",
+            "shipping_address": "100 Alpha Ave",
+            "shipping_city": "AlphaTown",
+            "shipping_zip": "10001"
+          },
+          "success": true,
+          "result": {
+            "order_id": 2,
+            "total": 112.98,
+            "discount": 0,
+            "coupon_code": "",
+            "items": 2,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        }
+      ],
+      "total_steps": 23,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "user_exists",
+            "email": "sc4a@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "user_exists",
+            "email": "sc4b@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "email": "sc4b@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_item_count",
+            "email": "sc4b@browser.test",
+            "order_index": 0,
+            "expected": 1
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "email": "sc4a@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_item_count",
+            "email": "sc4a@browser.test",
+            "order_index": 0,
+            "expected": 2
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "cart_count",
+            "email": "sc4a@browser.test",
+            "expected": 0
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "cart_count",
+            "email": "sc4b@browser.test",
+            "expected": 0
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.6667,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.8667
+      }
+    },
+    {
+      "scenario_id": "wishlist_move_vs_direct_add",
+      "prompt": "Register with name='Wishlist Tester', email='sc5@browser.test', password='Sc5Pass!'.\n\nPHASE 1 \u2014 Build wishlist:\nAdd these 5 products to your wishlist (use toggle_wishlist):\n  - Wireless Headphones (ID 1, $79.99)\n  - Denim Jacket (ID 6, $59.99)\n  - Clean Code (ID 10, $39.99)\n  - Desk Lamp (ID 13, $32.99)\n  - Plant Pot (ID 15, $18.99)\n\nPHASE 2 \u2014 Move the two MOST EXPENSIVE items from wishlist to cart:\nNavigate to the wishlist page. Find the wishlist item IDs for 'Wireless Headphones' and 'Denim Jacket' (the two most expensive). Use click_element with 'move-to-cart-{wishlist_item_id}' for each. This REMOVES them from the wishlist and adds them to the cart.\n\nPHASE 3 \u2014 Verify counts:\nThe wishlist should now have exactly 3 items. The cart should have 2 items.\n\nPHASE 4 \u2014 Add a wishlist item to cart DIRECTLY:\nUse add_to_cart to add Clean Code (product ID 10) to the cart. This adds it to the cart but does NOT remove it from the wishlist. The wishlist should STILL have 3 items. The cart should now have 3 items.\n\nPHASE 5 \u2014 Checkout:\nCheckout with shipping: name='Wishlist Tester', address='555 Wish Way', city='WishCity', zip='55555'. No coupon.\n\nAfter checkout: cart=0 items, wishlist=3 items (Clean Code, Desk Lamp, Plant Pot), order has 3 line items, total = $79.99 + $59.99 + $39.99 = $179.97.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "toggle_wishlist",
+        "click_element",
+        "add_to_cart",
+        "get_cart",
+        "checkout"
+      ],
+      "max_steps": 30,
+      "elapsed_s": 75.7,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-15T00:52:40.137602+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/register"
+          },
+          "success": true,
+          "result": {
+            "page": "register",
+            "title": "Create Account",
+            "elements": {
+              "form": {
+                "id": "register-form",
+                "fields": [
+                  {
+                    "name": "name",
+                    "type": "text",
+                    "label": "Full Name",
+                    "required": true
+                  },
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true,
+                    "minLength": 6
+                  },
+                  {
+                    "name": "confirm_password",
+                    "type": "password",
+                    "label": "Confirm Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "register-submit",
+                  "text": "Create Account"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-15T00:53:04.354871+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "name",
+            "value": "Wishlist Tester"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "name",
+            "page": "/register",
+            "filled_fields": [
+              "name"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.01
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-15T00:53:05.469791+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "sc5@browser.test"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-15T00:53:07.091477+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "Sc5Pass!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-15T00:53:08.326346+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "confirm_password",
+            "value": "Sc5Pass!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "confirm_password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password",
+              "confirm_password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-15T00:53:09.336538+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "register-form"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "name": "Wishlist Tester",
+            "email": "sc5@browser.test",
+            "token": "Mw=="
+          },
+          "error": null,
+          "elapsed_s": 0.073
+        }
+      ],
+      "total_steps": 6,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "user_exists",
+            "email": "sc5@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "email": "sc5@browser.test"
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_total",
+            "email": "sc5@browser.test",
+            "order_index": 0,
+            "value": 179.97
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "order_item_count",
+            "email": "sc5@browser.test",
+            "order_index": 0,
+            "expected": 3
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "wishlist_count",
+            "email": "sc5@browser.test",
+            "expected": 3
+          },
+          "passed": false
+        },
+        {
+          "check": {
+            "type": "cart_count",
+            "email": "sc5@browser.test",
+            "expected": 0
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.5889,
+        "ground_truth": 0.3333,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.4356
+      }
+    },
+    {
+      "scenario_id": "out_of_stock_boundary",
+      "prompt": "Register with name='Stock Tester', email='sc6@browser.test', password='Sc6Pass!'.\n\nTASK 1: Try to add 'The Pragmatic Programmer' (product ID 12, stock=1) to your cart with quantity 2. This MUST fail because only 1 copy is available. Observe the error message.\n\nTASK 2: Add the same book with quantity 1 (within stock). This should succeed.\n\nTASK 3: Add 'Design Patterns' (product ID 11, stock=10) to your cart with quantity 10 \u2014 exactly at the stock limit. This should succeed.\n\nTASK 4: Checkout with shipping: name='Stock Tester', address='777 Boundary Rd', city='EdgeCity', zip='77777'. No coupon.\n\nTASK 5: After checkout, attempt to add 'The Pragmatic Programmer' to the cart again (quantity 1). This should FAIL because the stock is now 0 after the previous purchase.\n\nVerify: Order has exactly 2 line items. Product ID 12 stock=0. Product ID 11 stock=0.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "add_to_cart",
+        "checkout"
+      ],
+      "max_steps": 20,
+      "elapsed_s": 68.61,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-15T00:53:53.045540+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/register"
+          },
+          "success": true,
+          "result": {
+            "page": "register",
+            "title": "Create Account",
+            "elements": {
+              "form": {
+                "id": "register-form",
+                "fields": [
+                  {
+                    "name": "name",
+                    "type": "text",
+                    "label": "Full Name",
+                    "required": true
+                  },
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true,
+                    "minLength": 6
+                  },
+                  {
+                    "name": "confirm_password",
+                    "type": "password",
+                    "label": "Confirm Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "register-submit",
+                  "text": "Create Account"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-15T00:53:58.508559+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "name",
+            "value": "Stock Tester"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "name",
+            "page": "/register",
+            "filled_fields": [
+              "name"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-15T00:53:59.591098+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "sc6@browser.test"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-15T00:54:00.551159+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "Sc6Pass!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-15T00:54:01.571209+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "confirm_password",
+            "value": "Sc6Pass!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "confirm_password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password",
+              "confirm_password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-15T00:54:02.648592+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "register-form"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "name": "Stock Tester",
+            "email": "sc6@browser.test",
+            "token": "Mw=="
+          },
+          "error": null,
+          "elapsed_s": 0.073
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-15T00:54:06.094379+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 12,
+            "quantity": 2
+          },
+          "success": true,
+          "result": {
+            "error": "Insufficient stock. Available: 1"
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-15T00:54:23.468048+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 12,
+            "quantity": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "product_id": 12,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-15T00:54:24.586276+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 11,
+            "quantity": 10
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "product_id": 11,
+            "quantity": 10
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-15T00:54:25.848060+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "Stock Tester",
+            "shipping_address": "777 Boundary Rd",
+            "shipping_city": "EdgeCity",
+            "shipping_zip": "77777"
+          },
+          "success": true,
+          "result": {
+            "order_id": 1,
+            "total": 542.89,
+            "discount": 0,
+            "coupon_code": "",
+            "items": 2,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        }
+      ],
+      "total_steps": 10,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "user_exists",
+            "email": "sc6@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "email": "sc6@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_item_count",
+            "email": "sc6@browser.test",
+            "order_index": 0,
+            "expected": 2
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_stock",
+            "product_id": 12,
+            "value": 0
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "product_stock",
+            "product_id": 11,
+            "value": 0
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_total",
+            "email": "sc6@browser.test",
+            "order_index": 0,
+            "value": 542.89
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.6267,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.8507
+      }
+    },
+    {
+      "scenario_id": "expired_coupon_cascade",
+      "prompt": "Register with name='Coupon Tester', email='sc7@browser.test', password='Sc7Pass!'.\n\nAdd these items to cart:\n  - Mechanical Keyboard (ID 3, $129.99) quantity 1\n  - Running Shoes (ID 7, $89.99) quantity 1\n  - Clean Code (ID 10, $39.99) quantity 1\n\nSubtotal: $259.97.\n\nNow attempt checkout with coupon code 'EXPIRED01'. This should FAIL because the coupon is expired/inactive. Note the error.\n\nYou have two remaining coupon options:\n  - SAVE10: 10% off (minimum $50) \u2192 would save $26.00\n  - SAVE20: 20% off (minimum $100) \u2192 would save $51.99\n\nChoose the coupon that saves the MOST money. Checkout with it.\nShipping: name='Coupon Tester', address='999 Cascade Blvd', city='CouponCity', zip='99999'.\n\nVerify: the order total should be exactly $207.98 with $51.99 discount.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "add_to_cart",
+        "checkout"
+      ],
+      "max_steps": 20,
+      "elapsed_s": 51.81,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-15T00:54:53.837062+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/register"
+          },
+          "success": true,
+          "result": {
+            "page": "register",
+            "title": "Create Account",
+            "elements": {
+              "form": {
+                "id": "register-form",
+                "fields": [
+                  {
+                    "name": "name",
+                    "type": "text",
+                    "label": "Full Name",
+                    "required": true
+                  },
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true,
+                    "minLength": 6
+                  },
+                  {
+                    "name": "confirm_password",
+                    "type": "password",
+                    "label": "Confirm Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "register-submit",
+                  "text": "Create Account"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-15T00:55:05.907967+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "name",
+            "value": "Coupon Tester"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "name",
+            "page": "/register",
+            "filled_fields": [
+              "name"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.01
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-15T00:55:07.130874+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "sc7@browser.test"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-15T00:55:08.174185+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "Sc7Pass!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-15T00:55:09.263246+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "confirm_password",
+            "value": "Sc7Pass!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "confirm_password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password",
+              "confirm_password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-15T00:55:10.232189+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "register-form"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "name": "Coupon Tester",
+            "email": "sc7@browser.test",
+            "token": "Mw=="
+          },
+          "error": null,
+          "elapsed_s": 0.073
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-15T00:55:17.449589+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 3,
+            "quantity": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "product_id": 3,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-15T00:55:17.463982+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 7,
+            "quantity": 1
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "product_id": 7,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-15T00:55:17.476828+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 10,
+            "quantity": 1
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "product_id": 10,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-15T00:55:22.831341+05:30",
+          "tool_name": "get_cart",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "items": [
+              {
+                "id": 1,
+                "product_id": 3,
+                "quantity": 1,
+                "name": "Mechanical Keyboard",
+                "price": 129.99,
+                "stock": 15,
+                "image_url": "/img/keyboard.jpg",
+                "subtotal": 129.99
+              },
+              {
+                "id": 2,
+                "product_id": 7,
+                "quantity": 1,
+                "name": "Running Shoes",
+                "price": 89.99,
+                "stock": 30,
+                "image_url": "/img/shoes.jpg",
+                "subtotal": 89.99
+              },
+              {
+                "id": 3,
+                "product_id": 10,
+                "quantity": 1,
+                "name": "Clean Code",
+                "price": 39.99,
+                "stock": 20,
+                "image_url": "/img/cleancode.jpg",
+                "subtotal": 39.99
+              }
+            ],
+            "count": 3,
+            "total": 259.97
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-15T00:55:27.520010+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "Coupon Tester",
+            "shipping_address": "999 Cascade Blvd",
+            "shipping_city": "CouponCity",
+            "shipping_zip": "99999",
+            "coupon_code": "EXPIRED01"
+          },
+          "success": true,
+          "result": {
+            "error": "Coupon \"EXPIRED01\" is expired or inactive"
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 12,
+          "timestamp": "2026-03-15T00:55:31.333256+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "Coupon Tester",
+            "shipping_address": "999 Cascade Blvd",
+            "shipping_city": "CouponCity",
+            "shipping_zip": "99999",
+            "coupon_code": "SAVE20"
+          },
+          "success": true,
+          "result": {
+            "order_id": 1,
+            "total": 207.98,
+            "discount": 51.99,
+            "coupon_code": "SAVE20",
+            "items": 3,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        }
+      ],
+      "total_steps": 12,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "user_exists",
+            "email": "sc7@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "email": "sc7@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_coupon",
+            "email": "sc7@browser.test",
+            "order_index": 0,
+            "value": "SAVE20"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_discount",
+            "email": "sc7@browser.test",
+            "order_index": 0,
+            "value": 51.99
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_total",
+            "email": "sc7@browser.test",
+            "order_index": 0,
+            "value": 207.98
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_item_count",
+            "email": "sc7@browser.test",
+            "order_index": 0,
+            "expected": 3
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.6389,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.8556
+      }
+    },
+    {
+      "scenario_id": "review_cross_page_verify",
+      "prompt": "Login as Alice (email: alice@example.com, password: password123).\n\nTASK 1: Navigate to product 'Wireless Headphones' (product ID 1). Leave a 4-star review with comment 'Excellent noise cancellation, comfortable fit'. Fill the form fields 'rating' (value: '4') and 'comment' (value: 'Excellent noise cancellation, comfortable fit'), then submit the review form (form ID: review-form).\n\nTASK 2: Navigate to product 'USB-C Hub' (product ID 2). Leave a 2-star review with comment 'Ports stopped working after two weeks'. Same process: fill rating='2', comment='Ports stopped working after two weeks', submit review-form.\n\nTASK 3: Navigate BACK to 'Wireless Headphones' (product ID 1) and verify that your 4-star review text is visible on the page using assert_text_visible with the text 'Excellent noise cancellation'.\n\nTASK 4: Navigate BACK to 'USB-C Hub' (product ID 2) and verify your 2-star review is visible using assert_text_visible with 'Ports stopped working'.\n\nTASK 5: Add both products to cart (Wireless Headphones ID 1 and USB-C Hub ID 2) and checkout with shipping: name='Alice Johnson', address='123 Main St', city='Springfield', zip='62704'. No coupon.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "assert_text_visible",
+        "add_to_cart",
+        "checkout"
+      ],
+      "max_steps": 25,
+      "elapsed_s": 55.59,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-15T00:55:47.300500+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/login"
+          },
+          "success": true,
+          "result": {
+            "page": "login",
+            "title": "Login",
+            "elements": {
+              "form": {
+                "id": "login-form",
+                "fields": [
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "login-submit",
+                  "text": "Log In"
+                }
+              },
+              "register_link": {
+                "text": "Don't have an account? Register",
+                "href": "/register"
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-15T00:55:56.966404+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "alice@example.com"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/login",
+            "filled_fields": [
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-15T00:55:57.982716+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "password123"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/login",
+            "filled_fields": [
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-15T00:55:58.955581+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "login-form"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "name": "Alice Johnson",
+            "email": "alice@example.com",
+            "token": "MQ=="
+          },
+          "error": null,
+          "elapsed_s": 0.069
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-15T00:56:07.884183+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/products/1"
+          },
+          "success": true,
+          "result": {
+            "page": "product_detail",
+            "title": "Wireless Headphones",
+            "elements": {
+              "product": {
+                "id": 1,
+                "name": "Wireless Headphones",
+                "description": "Bluetooth over-ear headphones with noise cancellation",
+                "price": 79.99,
+                "stock": 25,
+                "category": "Electronics",
+                "image_url": "/img/headphones.jpg"
+              },
+              "add_to_cart_button": {
+                "id": "add-to-cart-1",
+                "text": "Add to Cart",
+                "disabled": false
+              },
+              "add_to_wishlist_button": {
+                "id": "add-to-wishlist-1",
+                "text": "Add to Wishlist"
+              },
+              "reviews_section": {
+                "avg_rating": null,
+                "count": 0,
+                "reviews": []
+              },
+              "review_form": {
+                "id": "review-form",
+                "fields": [
+                  {
+                    "name": "rating",
+                    "type": "number",
+                    "label": "Rating (1-5)",
+                    "min": 1,
+                    "max": 5,
+                    "required": true
+                  },
+                  {
+                    "name": "comment",
+                    "type": "textarea",
+                    "label": "Comment"
+                  }
+                ],
+                "submit_button": {
+                  "id": "submit-review",
+                  "text": "Submit Review"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-15T00:56:08.891695+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "rating",
+            "value": "4"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "rating",
+            "page": "/products/1",
+            "filled_fields": [
+              "rating"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-15T00:56:09.880579+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "comment",
+            "value": "Excellent noise cancellation, comfortable fit"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "comment",
+            "page": "/products/1",
+            "filled_fields": [
+              "rating",
+              "comment"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-15T00:56:10.903244+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "review-form"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "product_id": 1,
+            "rating": 4,
+            "comment": "Excellent noise cancellation, comfortable fit"
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-15T00:56:12.052860+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/products/2"
+          },
+          "success": true,
+          "result": {
+            "page": "product_detail",
+            "title": "USB-C Hub",
+            "elements": {
+              "product": {
+                "id": 2,
+                "name": "USB-C Hub",
+                "description": "7-in-1 USB-C hub with HDMI, USB 3.0, SD card reader",
+                "price": 34.99,
+                "stock": 50,
+                "category": "Electronics",
+                "image_url": "/img/usbhub.jpg"
+              },
+              "add_to_cart_button": {
+                "id": "add-to-cart-2",
+                "text": "Add to Cart",
+                "disabled": false
+              },
+              "add_to_wishlist_button": {
+                "id": "add-to-wishlist-2",
+                "text": "Add to Wishlist"
+              },
+              "reviews_section": {
+                "avg_rating": null,
+                "count": 0,
+                "reviews": []
+              },
+              "review_form": {
+                "id": "review-form",
+                "fields": [
+                  {
+                    "name": "rating",
+                    "type": "number",
+                    "label": "Rating (1-5)",
+                    "min": 1,
+                    "max": 5,
+                    "required": true
+                  },
+                  {
+                    "name": "comment",
+                    "type": "textarea",
+                    "label": "Comment"
+                  }
+                ],
+                "submit_button": {
+                  "id": "submit-review",
+                  "text": "Submit Review"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-15T00:56:13.134368+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "rating",
+            "value": "2"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "rating",
+            "page": "/products/2",
+            "filled_fields": [
+              "rating"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-15T00:56:14.216107+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "comment",
+            "value": "Ports stopped working after two weeks"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "comment",
+            "page": "/products/2",
+            "filled_fields": [
+              "rating",
+              "comment"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 12,
+          "timestamp": "2026-03-15T00:56:15.371915+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "review-form"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "product_id": 2,
+            "rating": 2,
+            "comment": "Ports stopped working after two weeks"
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 13,
+          "timestamp": "2026-03-15T00:56:16.375073+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/products/1"
+          },
+          "success": true,
+          "result": {
+            "page": "product_detail",
+            "title": "Wireless Headphones",
+            "elements": {
+              "product": {
+                "id": 1,
+                "name": "Wireless Headphones",
+                "description": "Bluetooth over-ear headphones with noise cancellation",
+                "price": 79.99,
+                "stock": 25,
+                "category": "Electronics",
+                "image_url": "/img/headphones.jpg"
+              },
+              "add_to_cart_button": {
+                "id": "add-to-cart-1",
+                "text": "Add to Cart",
+                "disabled": false
+              },
+              "add_to_wishlist_button": {
+                "id": "add-to-wishlist-1",
+                "text": "Add to Wishlist"
+              },
+              "reviews_section": {
+                "avg_rating": 4,
+                "count": 1,
+                "reviews": [
+                  {
+                    "id": "review-1",
+                    "user_name": "Alice Johnson",
+                    "rating": 4,
+                    "comment": "Excellent noise cancellation, comfortable fit",
+                    "created_at": "2026-03-14 19:26:10"
+                  }
+                ]
+              },
+              "review_form": {
+                "id": "review-form",
+                "fields": [
+                  {
+                    "name": "rating",
+                    "type": "number",
+                    "label": "Rating (1-5)",
+                    "min": 1,
+                    "max": 5,
+                    "required": true
+                  },
+                  {
+                    "name": "comment",
+                    "type": "textarea",
+                    "label": "Comment"
+                  }
+                ],
+                "submit_button": {
+                  "id": "submit-review",
+                  "text": "Submit Review"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 14,
+          "timestamp": "2026-03-15T00:56:17.323693+05:30",
+          "tool_name": "assert_text_visible",
+          "arguments": {
+            "text": "Excellent noise cancellation"
+          },
+          "success": true,
+          "result": {
+            "visible": true,
+            "text": "Excellent noise cancellation",
+            "page": "/products/1"
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 15,
+          "timestamp": "2026-03-15T00:56:18.308459+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/products/2"
+          },
+          "success": true,
+          "result": {
+            "page": "product_detail",
+            "title": "USB-C Hub",
+            "elements": {
+              "product": {
+                "id": 2,
+                "name": "USB-C Hub",
+                "description": "7-in-1 USB-C hub with HDMI, USB 3.0, SD card reader",
+                "price": 34.99,
+                "stock": 50,
+                "category": "Electronics",
+                "image_url": "/img/usbhub.jpg"
+              },
+              "add_to_cart_button": {
+                "id": "add-to-cart-2",
+                "text": "Add to Cart",
+                "disabled": false
+              },
+              "add_to_wishlist_button": {
+                "id": "add-to-wishlist-2",
+                "text": "Add to Wishlist"
+              },
+              "reviews_section": {
+                "avg_rating": 2,
+                "count": 1,
+                "reviews": [
+                  {
+                    "id": "review-2",
+                    "user_name": "Alice Johnson",
+                    "rating": 2,
+                    "comment": "Ports stopped working after two weeks",
+                    "created_at": "2026-03-14 19:26:15"
+                  }
+                ]
+              },
+              "review_form": {
+                "id": "review-form",
+                "fields": [
+                  {
+                    "name": "rating",
+                    "type": "number",
+                    "label": "Rating (1-5)",
+                    "min": 1,
+                    "max": 5,
+                    "required": true
+                  },
+                  {
+                    "name": "comment",
+                    "type": "textarea",
+                    "label": "Comment"
+                  }
+                ],
+                "submit_button": {
+                  "id": "submit-review",
+                  "text": "Submit Review"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 16,
+          "timestamp": "2026-03-15T00:56:19.974540+05:30",
+          "tool_name": "assert_text_visible",
+          "arguments": {
+            "text": "Ports stopped working"
+          },
+          "success": true,
+          "result": {
+            "visible": true,
+            "text": "Ports stopped working",
+            "page": "/products/2"
+          },
+          "error": null,
+          "elapsed_s": 0.01
+        },
+        {
+          "step": 17,
+          "timestamp": "2026-03-15T00:56:27.239683+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "product_id": 1,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 18,
+          "timestamp": "2026-03-15T00:56:27.254797+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 2
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "product_id": 2,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 19,
+          "timestamp": "2026-03-15T00:56:28.464872+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "Alice Johnson",
+            "shipping_address": "123 Main St",
+            "shipping_city": "Springfield",
+            "shipping_zip": "62704"
+          },
+          "success": true,
+          "result": {
+            "order_id": 1,
+            "total": 114.98,
+            "discount": 0,
+            "coupon_code": "",
+            "items": 2,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        }
+      ],
+      "total_steps": 19,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "review_exists",
+            "email": "alice@example.com",
+            "product_id": 1
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "review_rating",
+            "email": "alice@example.com",
+            "product_id": 1,
+            "value": 4
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "review_exists",
+            "email": "alice@example.com",
+            "product_id": 2
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "review_rating",
+            "email": "alice@example.com",
+            "product_id": 2,
+            "value": 2
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "email": "alice@example.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_total",
+            "email": "alice@example.com",
+            "order_index": 0,
+            "value": 114.98
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_item_count",
+            "email": "alice@example.com",
+            "order_index": 0,
+            "expected": 2
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.7158,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.8863
+      }
+    },
+    {
+      "scenario_id": "profile_update_checkout_verify",
+      "prompt": "Login as Alice (email: alice@example.com, password: password123). Alice's current address is '123 Main St, Springfield'.\n\nSTEP 1: Add Portable Charger (product ID 4, $44.99) and Denim Jacket (product ID 6, $59.99) to your cart. Subtotal: $104.98.\n\nSTEP 2: Navigate to the profile page. Update Alice's address to '789 Elm St, Capital City, ST 54321'. Fill the 'address' field with this value and submit the profile form (form ID: profile-form).\n\nSTEP 3: Navigate to verify the profile was updated \u2014 the address field should now show the new value.\n\nSTEP 4: Checkout the cart. Use the UPDATED address for shipping:\n  shipping_name='Alice Johnson'\n  shipping_address='789 Elm St'\n  shipping_city='Capital City'\n  shipping_zip='54321'\nApply SAVE10 coupon (10% off $104.98 = $10.50 discount, total = $94.48).\n\nVerify: order shipping address matches the new address, discount is correct, and the profile address was actually updated.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "add_to_cart",
+        "checkout"
+      ],
+      "max_steps": 20,
+      "elapsed_s": 99.65,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-15T00:56:41.763157+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/login"
+          },
+          "success": true,
+          "result": {
+            "page": "login",
+            "title": "Login",
+            "elements": {
+              "form": {
+                "id": "login-form",
+                "fields": [
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "login-submit",
+                  "text": "Log In"
+                }
+              },
+              "register_link": {
+                "text": "Don't have an account? Register",
+                "href": "/register"
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-15T00:56:47.940719+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "alice@example.com"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/login",
+            "filled_fields": [
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-15T00:56:49.105913+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "password123"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/login",
+            "filled_fields": [
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-15T00:56:50.370923+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "login-form"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "name": "Alice Johnson",
+            "email": "alice@example.com",
+            "token": "MQ=="
+          },
+          "error": null,
+          "elapsed_s": 0.07
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-15T00:57:01.086847+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 4,
+            "quantity": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "product_id": 4,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.02
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-15T00:57:01.106635+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 6,
+            "quantity": 1
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "product_id": 6,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.016
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-15T00:57:07.724177+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/profile"
+          },
+          "success": true,
+          "result": {
+            "page": "profile",
+            "title": "My Profile",
+            "elements": {
+              "profile_form": {
+                "id": "profile-form",
+                "fields": [
+                  {
+                    "name": "name",
+                    "type": "text",
+                    "label": "Name",
+                    "value": "Alice Johnson"
+                  },
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "value": "alice@example.com"
+                  },
+                  {
+                    "name": "address",
+                    "type": "text",
+                    "label": "Address",
+                    "value": "123 Main St, Springfield"
+                  }
+                ],
+                "submit_button": {
+                  "id": "update-profile",
+                  "text": "Save Changes"
+                }
+              },
+              "password_form": {
+                "id": "password-form",
+                "fields": [
+                  {
+                    "name": "current_password",
+                    "type": "password",
+                    "label": "Current Password",
+                    "required": true
+                  },
+                  {
+                    "name": "new_password",
+                    "type": "password",
+                    "label": "New Password",
+                    "required": true,
+                    "minLength": 6
+                  }
+                ],
+                "submit_button": {
+                  "id": "change-password",
+                  "text": "Change Password"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-15T00:57:18.634368+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "address",
+            "value": "789 Elm St, Capital City, ST 54321"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "address",
+            "page": "/profile",
+            "filled_fields": [
+              "address"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-15T00:57:19.724014+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "profile-form"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "name": "Alice Johnson",
+            "email": "alice@example.com",
+            "address": "789 Elm St, Capital City, ST 54321",
+            "created_at": "2026-03-14 19:26:31"
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-15T00:57:31.598897+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/profile"
+          },
+          "success": true,
+          "result": {
+            "page": "profile",
+            "title": "My Profile",
+            "elements": {
+              "profile_form": {
+                "id": "profile-form",
+                "fields": [
+                  {
+                    "name": "name",
+                    "type": "text",
+                    "label": "Name",
+                    "value": "Alice Johnson"
+                  },
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "value": "alice@example.com"
+                  },
+                  {
+                    "name": "address",
+                    "type": "text",
+                    "label": "Address",
+                    "value": "789 Elm St, Capital City, ST 54321"
+                  }
+                ],
+                "submit_button": {
+                  "id": "update-profile",
+                  "text": "Save Changes"
+                }
+              },
+              "password_form": {
+                "id": "password-form",
+                "fields": [
+                  {
+                    "name": "current_password",
+                    "type": "password",
+                    "label": "Current Password",
+                    "required": true
+                  },
+                  {
+                    "name": "new_password",
+                    "type": "password",
+                    "label": "New Password",
+                    "required": true,
+                    "minLength": 6
+                  }
+                ],
+                "submit_button": {
+                  "id": "change-password",
+                  "text": "Change Password"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-15T00:57:32.582725+05:30",
+          "tool_name": "get_cart",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "items": [
+              {
+                "id": 1,
+                "product_id": 4,
+                "quantity": 1,
+                "name": "Portable Charger",
+                "price": 44.99,
+                "stock": 40,
+                "image_url": "/img/charger.jpg",
+                "subtotal": 44.99
+              },
+              {
+                "id": 2,
+                "product_id": 6,
+                "quantity": 1,
+                "name": "Denim Jacket",
+                "price": 59.99,
+                "stock": 20,
+                "image_url": "/img/denim.jpg",
+                "subtotal": 59.99
+              }
+            ],
+            "count": 2,
+            "total": 104.98
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 12,
+          "timestamp": "2026-03-15T00:57:33.808959+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "Alice Johnson",
+            "shipping_address": "789 Elm St",
+            "shipping_city": "Capital City",
+            "shipping_zip": "54321",
+            "coupon_code": "SAVE10"
+          },
+          "success": true,
+          "result": {
+            "order_id": 1,
+            "total": 94.48,
+            "discount": 10.5,
+            "coupon_code": "SAVE10",
+            "items": 2,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.015
+        },
+        {
+          "step": 13,
+          "timestamp": "2026-03-15T00:57:42.532267+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/orders"
+          },
+          "success": true,
+          "result": {
+            "page": "order_history",
+            "title": "Order History",
+            "elements": {
+              "orders": [
+                {
+                  "id": "order-1",
+                  "order_id": 1,
+                  "total": 94.48,
+                  "status": "pending",
+                  "created_at": "2026-03-14 19:27:33",
+                  "coupon_code": "SAVE10",
+                  "discount": 10.5,
+                  "view_link": {
+                    "href": "/orders/1",
+                    "text": "View Details"
+                  }
+                }
+              ],
+              "count": 1
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 14,
+          "timestamp": "2026-03-15T00:57:43.547259+05:30",
+          "tool_name": "click_element",
+          "arguments": {
+            "element_id": "order-1"
+          },
+          "success": true,
+          "result": {
+            "element": {
+              "id": "order-1",
+              "order_id": 1,
+              "total": 94.48,
+              "status": "pending",
+              "created_at": "2026-03-14 19:27:33",
+              "coupon_code": "SAVE10",
+              "discount": 10.5,
+              "view_link": {
+                "href": "/orders/1",
+                "text": "View Details"
+              }
+            },
+            "note": "Element found but has no clickable action"
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 15,
+          "timestamp": "2026-03-15T00:57:56.491537+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/orders/1"
+          },
+          "success": true,
+          "result": {
+            "page": "order_detail",
+            "title": "Order #1",
+            "elements": {
+              "order": {
+                "id": 1,
+                "total": 94.48,
+                "status": "pending",
+                "shipping_name": "Alice Johnson",
+                "shipping_address": "789 Elm St",
+                "shipping_city": "Capital City",
+                "shipping_zip": "54321",
+                "coupon_code": "SAVE10",
+                "discount": 10.5,
+                "created_at": "2026-03-14 19:27:33"
+              },
+              "items": [
+                {
+                  "product_id": 4,
+                  "name": "Portable Charger",
+                  "quantity": 1,
+                  "price": 44.99,
+                  "subtotal": 44.99
+                },
+                {
+                  "product_id": 6,
+                  "name": "Denim Jacket",
+                  "quantity": 1,
+                  "price": 59.99,
+                  "subtotal": 59.99
+                }
+              ],
+              "cancel_button": {
+                "id": "cancel-order",
+                "text": "Cancel Order"
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        }
+      ],
+      "total_steps": 15,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "order_exists",
+            "email": "alice@example.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_total",
+            "email": "alice@example.com",
+            "order_index": 0,
+            "value": 94.48
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_discount",
+            "email": "alice@example.com",
+            "order_index": 0,
+            "value": 10.5
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_coupon",
+            "email": "alice@example.com",
+            "order_index": 0,
+            "value": "SAVE10"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_shipping",
+            "email": "alice@example.com",
+            "order_index": 0,
+            "field": "shipping_address",
+            "value": "789 Elm St"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_shipping",
+            "email": "alice@example.com",
+            "order_index": 0,
+            "field": "shipping_city",
+            "value": "Capital City"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "user_field",
+            "email": "alice@example.com",
+            "field": "address",
+            "value": "789 Elm St, Capital City, ST 54321"
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.7067,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.8827
+      }
+    },
+    {
+      "scenario_id": "contact_then_register_same_email",
+      "prompt": "PHASE 1 \u2014 Anonymous contact (NOT logged in):\nNavigate to the contact page. Fill the contact form with:\n  name='Site Visitor'\n  email='sc10@browser.test'\n  subject='International Shipping'\n  message='Do you ship to Canada? What are the rates?'\nSubmit the contact form (form ID: contact-form). Verify it was submitted.\n\nPHASE 2 \u2014 Registration with SAME email:\nNow register a new account: name='Sarah Chen', email='sc10@browser.test', password='Sc10Pass!'. Note: the name is 'Sarah Chen', NOT 'Site Visitor'. These are different entities \u2014 the contact form does not create an account.\n\nPHASE 3 \u2014 Shopping:\nAdd Coffee Mug Set (product ID 14, $24.99) and Desk Lamp (product ID 13, $32.99) to cart. Checkout with shipping: name='Sarah Chen', address='42 Chen Way', city='ChenTown', zip='42042'. No coupon.\n\nVerify: contact form exists with email sc10@browser.test and name 'Site Visitor'. User account exists with email sc10@browser.test and name 'Sarah Chen'. Order exists with total $57.98.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "add_to_cart",
+        "checkout"
+      ],
+      "max_steps": 20,
+      "elapsed_s": 72.57,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-15T00:58:21.691497+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/contact"
+          },
+          "success": true,
+          "result": {
+            "page": "contact",
+            "title": "Contact Us",
+            "elements": {
+              "form": {
+                "id": "contact-form",
+                "fields": [
+                  {
+                    "name": "name",
+                    "type": "text",
+                    "label": "Your Name",
+                    "required": true
+                  },
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Your Email",
+                    "required": true
+                  },
+                  {
+                    "name": "subject",
+                    "type": "text",
+                    "label": "Subject",
+                    "required": true
+                  },
+                  {
+                    "name": "message",
+                    "type": "textarea",
+                    "label": "Message",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "send-message",
+                  "text": "Send Message"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-15T00:58:29.911408+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "name",
+            "value": "Site Visitor"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "name",
+            "page": "/contact",
+            "filled_fields": [
+              "name"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-15T00:58:30.950385+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "sc10@browser.test"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/contact",
+            "filled_fields": [
+              "name",
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-15T00:58:32.101929+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "subject",
+            "value": "International Shipping"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "subject",
+            "page": "/contact",
+            "filled_fields": [
+              "name",
+              "email",
+              "subject"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-15T00:58:33.600752+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "message",
+            "value": "Do you ship to Canada? What are the rates?"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "message",
+            "page": "/contact",
+            "filled_fields": [
+              "name",
+              "email",
+              "subject",
+              "message"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-15T00:58:34.722987+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "contact-form"
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "submitted": true
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-15T00:58:49.313783+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/register"
+          },
+          "success": true,
+          "result": {
+            "page": "register",
+            "title": "Create Account",
+            "elements": {
+              "form": {
+                "id": "register-form",
+                "fields": [
+                  {
+                    "name": "name",
+                    "type": "text",
+                    "label": "Full Name",
+                    "required": true
+                  },
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true,
+                    "minLength": 6
+                  },
+                  {
+                    "name": "confirm_password",
+                    "type": "password",
+                    "label": "Confirm Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "register-submit",
+                  "text": "Create Account"
+                }
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-15T00:58:50.275329+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "name",
+            "value": "Sarah Chen"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "name",
+            "page": "/register",
+            "filled_fields": [
+              "name"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-15T00:58:51.291495+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "sc10@browser.test"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-15T00:58:52.291854+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "Sc10Pass!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-15T00:58:53.312735+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "confirm_password",
+            "value": "Sc10Pass!"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "confirm_password",
+            "page": "/register",
+            "filled_fields": [
+              "name",
+              "email",
+              "password",
+              "confirm_password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.009
+        },
+        {
+          "step": 12,
+          "timestamp": "2026-03-15T00:58:54.382195+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "register-form"
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "name": "Sarah Chen",
+            "email": "sc10@browser.test",
+            "token": "Mw=="
+          },
+          "error": null,
+          "elapsed_s": 0.071
+        },
+        {
+          "step": 13,
+          "timestamp": "2026-03-15T00:59:06.979498+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 14
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "product_id": 14,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 14,
+          "timestamp": "2026-03-15T00:59:06.993457+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 13
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "product_id": 13,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 15,
+          "timestamp": "2026-03-15T00:59:08.122848+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "Sarah Chen",
+            "shipping_address": "42 Chen Way",
+            "shipping_city": "ChenTown",
+            "shipping_zip": "42042"
+          },
+          "success": true,
+          "result": {
+            "order_id": 1,
+            "total": 57.98,
+            "discount": 0,
+            "coupon_code": "",
+            "items": 2,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        }
+      ],
+      "total_steps": 15,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "contact_exists",
+            "email": "sc10@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "user_exists",
+            "email": "sc10@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "user_field",
+            "email": "sc10@browser.test",
+            "field": "name",
+            "value": "Sarah Chen"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_exists",
+            "email": "sc10@browser.test"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_total",
+            "email": "sc10@browser.test",
+            "order_index": 0,
+            "value": 57.98
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_item_count",
+            "email": "sc10@browser.test",
+            "order_index": 0,
+            "expected": 2
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.6533,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.8613
+      }
+    },
+    {
+      "scenario_id": "bulk_cart_ops_total_tracking",
+      "prompt": "Login as Bob (email: bob@example.com, password: securepass).\n\nSTEP 1 \u2014 Add 5 products to cart (quantity 1 each):\n  a) Wireless Headphones (ID 1, $79.99)\n  b) Mechanical Keyboard (ID 3, $129.99)\n  c) Cotton T-Shirt (ID 5, $19.99)\n  d) Running Shoes (ID 7, $89.99)\n  e) Desk Lamp (ID 13, $32.99)\nVerify cart has exactly 5 items.\n\nSTEP 2 \u2014 Update quantities:\n  - Wireless Headphones \u2192 quantity 3\n  - Cotton T-Shirt \u2192 quantity 4\n  Leave all others at quantity 1.\n\u26a0 Use the cart_item_id from get_cart results, NOT the product_id.\n\nSTEP 3 \u2014 Remove 2 items from cart:\n  - Remove Running Shoes\n  - Remove Desk Lamp\nAgain, use cart_item_ids. Verify cart now has exactly 3 items.\n\nSTEP 4 \u2014 Verify total:\nGet the cart. The total should be:\n  Headphones: $79.99 \u00d7 3 = $239.97\n  Keyboard:   $129.99 \u00d7 1 = $129.99\n  T-Shirt:    $19.99 \u00d7 4 = $79.96\n  Grand total: $449.92\n\nSTEP 5 \u2014 Checkout with SAVE20 coupon (20% off $449.92 = $89.98, total = $359.94). Shipping: name='Bob Smith', address='456 Oak Ave', city='Shelbyville', zip='62565'.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "add_to_cart",
+        "update_cart_item",
+        "remove_from_cart",
+        "get_cart",
+        "checkout"
+      ],
+      "max_steps": 25,
+      "elapsed_s": 58.11,
+      "steps": [
+        {
+          "step": 1,
+          "timestamp": "2026-03-15T00:59:37.440150+05:30",
+          "tool_name": "navigate",
+          "arguments": {
+            "route": "/login"
+          },
+          "success": true,
+          "result": {
+            "page": "login",
+            "title": "Login",
+            "elements": {
+              "form": {
+                "id": "login-form",
+                "fields": [
+                  {
+                    "name": "email",
+                    "type": "email",
+                    "label": "Email",
+                    "required": true
+                  },
+                  {
+                    "name": "password",
+                    "type": "password",
+                    "label": "Password",
+                    "required": true
+                  }
+                ],
+                "submit_button": {
+                  "id": "login-submit",
+                  "text": "Log In"
+                }
+              },
+              "register_link": {
+                "text": "Don't have an account? Register",
+                "href": "/register"
+              }
+            }
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-03-15T00:59:42.138418+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "email",
+            "value": "bob@example.com"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "email",
+            "page": "/login",
+            "filled_fields": [
+              "email"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-03-15T00:59:43.092235+05:30",
+          "tool_name": "fill_form",
+          "arguments": {
+            "field_name": "password",
+            "value": "securepass"
+          },
+          "success": true,
+          "result": {
+            "status": "ok",
+            "field": "password",
+            "page": "/login",
+            "filled_fields": [
+              "email",
+              "password"
+            ]
+          },
+          "error": null,
+          "elapsed_s": 0.008
+        },
+        {
+          "step": 4,
+          "timestamp": "2026-03-15T00:59:43.984319+05:30",
+          "tool_name": "submit_form",
+          "arguments": {
+            "form_id": "login-form"
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "name": "Bob Smith",
+            "email": "bob@example.com",
+            "token": "Mg=="
+          },
+          "error": null,
+          "elapsed_s": 0.07
+        },
+        {
+          "step": 5,
+          "timestamp": "2026-03-15T00:59:52.539167+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 1
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "product_id": 1,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 6,
+          "timestamp": "2026-03-15T00:59:52.552816+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 3
+          },
+          "success": true,
+          "result": {
+            "id": 2,
+            "product_id": 3,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.013
+        },
+        {
+          "step": 7,
+          "timestamp": "2026-03-15T00:59:52.565658+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 5
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "product_id": 5,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 8,
+          "timestamp": "2026-03-15T00:59:52.578058+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 7
+          },
+          "success": true,
+          "result": {
+            "id": 4,
+            "product_id": 7,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 9,
+          "timestamp": "2026-03-15T00:59:52.589962+05:30",
+          "tool_name": "add_to_cart",
+          "arguments": {
+            "product_id": 13
+          },
+          "success": true,
+          "result": {
+            "id": 5,
+            "product_id": 13,
+            "quantity": 1
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 10,
+          "timestamp": "2026-03-15T00:59:53.527162+05:30",
+          "tool_name": "get_cart",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "items": [
+              {
+                "id": 1,
+                "product_id": 1,
+                "quantity": 1,
+                "name": "Wireless Headphones",
+                "price": 79.99,
+                "stock": 25,
+                "image_url": "/img/headphones.jpg",
+                "subtotal": 79.99
+              },
+              {
+                "id": 2,
+                "product_id": 3,
+                "quantity": 1,
+                "name": "Mechanical Keyboard",
+                "price": 129.99,
+                "stock": 15,
+                "image_url": "/img/keyboard.jpg",
+                "subtotal": 129.99
+              },
+              {
+                "id": 3,
+                "product_id": 5,
+                "quantity": 1,
+                "name": "Cotton T-Shirt",
+                "price": 19.99,
+                "stock": 100,
+                "image_url": "/img/tshirt.jpg",
+                "subtotal": 19.99
+              },
+              {
+                "id": 4,
+                "product_id": 7,
+                "quantity": 1,
+                "name": "Running Shoes",
+                "price": 89.99,
+                "stock": 30,
+                "image_url": "/img/shoes.jpg",
+                "subtotal": 89.99
+              },
+              {
+                "id": 5,
+                "product_id": 13,
+                "quantity": 1,
+                "name": "Desk Lamp",
+                "price": 32.99,
+                "stock": 45,
+                "image_url": "/img/lamp.jpg",
+                "subtotal": 32.99
+              }
+            ],
+            "count": 5,
+            "total": 352.95
+          },
+          "error": null,
+          "elapsed_s": 0.011
+        },
+        {
+          "step": 11,
+          "timestamp": "2026-03-15T01:00:07.696372+05:30",
+          "tool_name": "update_cart_item",
+          "arguments": {
+            "cart_item_id": 1,
+            "quantity": 3
+          },
+          "success": true,
+          "result": {
+            "id": 1,
+            "quantity": 3
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 12,
+          "timestamp": "2026-03-15T01:00:07.711025+05:30",
+          "tool_name": "update_cart_item",
+          "arguments": {
+            "cart_item_id": 3,
+            "quantity": 4
+          },
+          "success": true,
+          "result": {
+            "id": 3,
+            "quantity": 4
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 13,
+          "timestamp": "2026-03-15T01:00:08.858584+05:30",
+          "tool_name": "get_cart",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "items": [
+              {
+                "id": 1,
+                "product_id": 1,
+                "quantity": 3,
+                "name": "Wireless Headphones",
+                "price": 79.99,
+                "stock": 25,
+                "image_url": "/img/headphones.jpg",
+                "subtotal": 239.97
+              },
+              {
+                "id": 2,
+                "product_id": 3,
+                "quantity": 1,
+                "name": "Mechanical Keyboard",
+                "price": 129.99,
+                "stock": 15,
+                "image_url": "/img/keyboard.jpg",
+                "subtotal": 129.99
+              },
+              {
+                "id": 3,
+                "product_id": 5,
+                "quantity": 4,
+                "name": "Cotton T-Shirt",
+                "price": 19.99,
+                "stock": 100,
+                "image_url": "/img/tshirt.jpg",
+                "subtotal": 79.96
+              },
+              {
+                "id": 4,
+                "product_id": 7,
+                "quantity": 1,
+                "name": "Running Shoes",
+                "price": 89.99,
+                "stock": 30,
+                "image_url": "/img/shoes.jpg",
+                "subtotal": 89.99
+              },
+              {
+                "id": 5,
+                "product_id": 13,
+                "quantity": 1,
+                "name": "Desk Lamp",
+                "price": 32.99,
+                "stock": 45,
+                "image_url": "/img/lamp.jpg",
+                "subtotal": 32.99
+              }
+            ],
+            "count": 5,
+            "total": 572.9
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 14,
+          "timestamp": "2026-03-15T01:00:14.585539+05:30",
+          "tool_name": "remove_from_cart",
+          "arguments": {
+            "cart_item_id": 4
+          },
+          "success": true,
+          "result": {
+            "deleted": true
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        },
+        {
+          "step": 15,
+          "timestamp": "2026-03-15T01:00:14.599623+05:30",
+          "tool_name": "remove_from_cart",
+          "arguments": {
+            "cart_item_id": 5
+          },
+          "success": true,
+          "result": {
+            "deleted": true
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 16,
+          "timestamp": "2026-03-15T01:00:15.577497+05:30",
+          "tool_name": "get_cart",
+          "arguments": {},
+          "success": true,
+          "result": {
+            "items": [
+              {
+                "id": 1,
+                "product_id": 1,
+                "quantity": 3,
+                "name": "Wireless Headphones",
+                "price": 79.99,
+                "stock": 25,
+                "image_url": "/img/headphones.jpg",
+                "subtotal": 239.97
+              },
+              {
+                "id": 2,
+                "product_id": 3,
+                "quantity": 1,
+                "name": "Mechanical Keyboard",
+                "price": 129.99,
+                "stock": 15,
+                "image_url": "/img/keyboard.jpg",
+                "subtotal": 129.99
+              },
+              {
+                "id": 3,
+                "product_id": 5,
+                "quantity": 4,
+                "name": "Cotton T-Shirt",
+                "price": 19.99,
+                "stock": 100,
+                "image_url": "/img/tshirt.jpg",
+                "subtotal": 79.96
+              }
+            ],
+            "count": 3,
+            "total": 449.92
+          },
+          "error": null,
+          "elapsed_s": 0.012
+        },
+        {
+          "step": 17,
+          "timestamp": "2026-03-15T01:00:16.920016+05:30",
+          "tool_name": "checkout",
+          "arguments": {
+            "shipping_name": "Bob Smith",
+            "shipping_address": "456 Oak Ave",
+            "shipping_city": "Shelbyville",
+            "shipping_zip": "62565",
+            "coupon_code": "SAVE20"
+          },
+          "success": true,
+          "result": {
+            "order_id": 1,
+            "total": 359.94,
+            "discount": 89.98,
+            "coupon_code": "SAVE20",
+            "items": 3,
+            "status": "pending"
+          },
+          "error": null,
+          "elapsed_s": 0.014
+        }
+      ],
+      "total_steps": 17,
+      "outcome_checks": [
+        {
+          "check": {
+            "type": "order_exists",
+            "email": "bob@example.com"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_total",
+            "email": "bob@example.com",
+            "order_index": 0,
+            "value": 359.94
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_discount",
+            "email": "bob@example.com",
+            "order_index": 0,
+            "value": 89.98
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_coupon",
+            "email": "bob@example.com",
+            "order_index": 0,
+            "value": "SAVE20"
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "order_item_count",
+            "email": "bob@example.com",
+            "order_index": 0,
+            "expected": 3
+          },
+          "passed": true
+        },
+        {
+          "check": {
+            "type": "cart_count",
+            "email": "bob@example.com",
+            "expected": 0
+          },
+          "passed": true
+        }
+      ],
+      "reward": {
+        "structural": 0.7647,
+        "ground_truth": 1.0,
+        "efficiency": 0.0,
+        "penalty": 0.0,
+        "total": 0.9059
+      }
+    },
+    {
+      "scenario_id": "cheapest_expensive_cross_category",
+      "prompt": "Register with name='Cross Category', email='sc12@browser.test', password='Sc12Pass!'.\n\nYour task:\n  1. Search the 'Electronics' category and find the CHEAPEST product. Add it.\n  2. Search the 'Clothing' category and find the MOST EXPENSIVE product. Add it.\n  3. Search the 'Books' category and find the book with 'Pattern' in its name. Add it.\n\nAfter adding all three items, calculate the subtotal. If the subtotal exceeds $100, apply the SAVE20 coupon (20% off). If it's between $50 and $100, apply SAVE10 (10% off). If it's under $50, apply no coupon.\n\nCheckout with shipping: name='Cross Category', address='300 Cross St', city='MultiCity', zip='30003'.\n\nHINT: You must actually search each category and inspect the results to identify the correct products. Do not guess based on product names alone.",
+      "expected_tools": [
+        "navigate",
+        "fill_form",
+        "submit_form",
+        "search_products",
+        "add_to_cart",
+        "checkout"
+      ],
+      "max_steps": 20,
+      "elapsed_s": 17.01,
+      "steps": [],
+      "total_steps": 0,
+      "error": "litellm.BadRequestError: OpenAIException - Could not finish the message because max_tokens or model output limit was reached. Please try again with higher max_tokens.",
+      "outcome_checks": [],
+      "reward": null
+    }
+  ],
+  "avg_reward": 0.758
+}

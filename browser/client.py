@@ -7,7 +7,7 @@ AutoEnv discovery expects three exports:
     - BrowserObservation  (observation) — the Observation type
 
 Usage (manual):
-    >>> from browser_gym.client import BrowserEnv
+    >>> from browser.client import BrowserEnv
     >>> with BrowserEnv(base_url="http://localhost:9003") as env:
     ...     env.reset()
     ...     tools = env.list_tools()
@@ -15,7 +15,7 @@ Usage (manual):
 
 Usage (auto-discovery):
     >>> from openenv import AutoEnv
-    >>> env = AutoEnv.from_env("browser_gym", base_url="http://localhost:9003")
+    >>> env = AutoEnv.from_env("browser", base_url="http://localhost:9003")
 """
 
 from openenv.core.mcp_client import MCPToolClient

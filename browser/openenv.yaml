@@ -2,7 +2,7 @@
 # AutoEnv discovery reads this file to auto-connect clients.
 
 spec_version: 1
-name: browser_gym
+name: browser_env
 description: "Browser Gym — navigate, interact, and assert on a web application via browser-like MCP tools"
 type: space
 runtime: fastapi

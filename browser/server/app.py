@@ -50,7 +50,7 @@ app = create_app(
     BrowserEnvironment,
     MCPAction,
     CallToolObservation,
-    env_name="browser_gym",
+    env_name="browser_env",
     max_concurrent_envs=MAX_CONCURRENT_ENVS,
 )
 

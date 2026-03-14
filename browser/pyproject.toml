@@ -17,12 +17,12 @@ dependencies = [
 ]
 
 [project.scripts]
-server = "browser_gym.server.app:main"
+server = "browser.server.app:main"
 
 [tool.setuptools]
 include-package-data = true
-packages = ["browser_gym", "browser_gym.server"]
-package-dir = {"browser_gym" = ".", "browser_gym.server" = "server"}
+packages = ["browser", "browser.server"]
+package-dir = {"browser" = ".", "browser.server" = "server"}
 
 [tool.setuptools.package-data]
-browser_gym = ["openenv.yaml"]
+browser = ["openenv.yaml"]
