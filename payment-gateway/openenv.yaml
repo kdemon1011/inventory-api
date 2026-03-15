@@ -1,0 +1,11 @@
+# OpenEnv Environment Manifest
+# Tells OpenEnv how to find and run this environment.
+# AutoEnv discovery reads this file to auto-connect clients.
+
+spec_version: 1
+name: payment_gateway
+description: "Payment Gateway — process payments, handle webhooks, manage refunds via Stripe-like mock"
+type: space
+runtime: fastapi
+app: server.app:app
+port: 9002

@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Node (stripe-mock is copied separately in Dockerfile)
+stripe-mock/node_modules/
+
+# Runtime data (created at container start)
+data/
+
+# IDE / OS
+.git/
+.idea/
+.vscode/
+*.swp
+*.swo

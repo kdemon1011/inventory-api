@@ -17,21 +17,23 @@ Supports two execution modes:
   - Parallel (--parallel N): run N models simultaneously, each with isolated DB sessions
 
 Prerequisites:
-    1. Install the gym:  pip install -e inventory/
+    1. Install the gym:  pip install -e inventory/   (or pip install -e payment-gateway/)
     2. Start the gym:    docker run -d --name inventory -p 8000:8000 -p 9000:9000 openenv-inventory
     3. Run evaluation:   python run_eval.py --gym inventory --model gpt-4o
 
 Usage:
     # Sequential (one model)
     python run_eval.py --gym inventory --model gpt-4o --save --trajectory
+    python run_eval.py --gym payment_gateway --model gpt-4o --save --trajectory
 
     # Parallel (multiple models, comma-separated)
     python run_eval.py --gym inventory --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6 --parallel 3 --save --trajectory
+    python run_eval.py --gym payment_gateway --model gpt-5.4,claude-opus-4-6,o3-pro --parallel 3 --save --trajectory
 
     # More examples
     python run_eval.py --gym inventory --model gpt-4o --reward-mode openenv
     python run_eval.py --gym inventory --model gpt-4o --scenario create_product
-    python run_eval.py --gym inventory --model gpt-5.4 --temperature 1.0 --save --trajectory
+    python run_eval.py --gym payment_gateway --model gpt-5.4 --temperature 1.0 --save --trajectory
 """
 
 import argparse
@@ -78,13 +80,13 @@ GYM_REGISTRY = {
         "transform_factory": lambda: _create_inventory_transform(),
         "default_api_url": "http://localhost:8000",   # for ground truth checker (not OpenEnv)
     },
+    "payment_gateway": {
+        "scenarios_loader": lambda: _load_payment_scenarios(),
+        "checker_factory": lambda api_url, session_id=None: _create_payment_checker(api_url, session_id),
+        "transform_factory": lambda: _create_payment_transform(),
+        "default_api_url": "http://localhost:8002",
+    },
     # Future gyms — uncomment as each is implemented:
-    # "payment_gateway": {
-    #     "scenarios_loader": lambda: _load_payment_scenarios(),
-    #     "checker_factory": lambda api_url, session_id=None: _create_payment_checker(api_url, session_id),
-    #     "transform_factory": lambda: _create_payment_transform(),
-    #     "default_api_url": "http://localhost:8002",
-    # },
     # "browser": {
     #     "scenarios_loader": lambda: _load_browser_scenarios(),
     #     "checker_factory": lambda api_url, session_id=None: _create_browser_checker(api_url, session_id),
@@ -142,6 +144,20 @@ def _create_inventory_transform():
     from rewards.transforms.inventory import InventoryStepTransform
     return InventoryStepTransform()
 
+
+def _load_payment_scenarios():
+    from scenarios.payment_gateway import PAYMENT_GATEWAY_SCENARIOS
+    return PAYMENT_GATEWAY_SCENARIOS
+
+
+def _create_payment_checker(api_url, session_id=None):
+    from rewards.payment_checks import PaymentChecker
+    return PaymentChecker(api_url=api_url, session_id=session_id)
+
+
+def _create_payment_transform():
+    from rewards.transforms.payment_gateway import PaymentStepTransform
+    return PaymentStepTransform()
 
 
 def _fetch_gym_metadata(base_url: str) -> dict | None:
@@ -559,19 +575,20 @@ def main():
         epilog="""
 Prerequisites:
   pip install -e inventory/          # install gym for AutoEnv discovery
+  pip install -e payment-gateway/    # install payment gateway gym
 
 Examples:
   # Sequential (one model)
   python run_eval.py --gym inventory --model gpt-4o
-  python run_eval.py --gym inventory --model gpt-4o --reward-mode openenv
+  python run_eval.py --gym payment_gateway --model gpt-4o --reward-mode openenv
 
   # Parallel (multiple models)
   python run_eval.py --gym inventory --model gpt-4o-mini,gpt-4o,claude-sonnet-4-6 --parallel 3
-  python run_eval.py --gym inventory --model gpt-4o-mini,gpt-4o --parallel 2 --save --trajectory
+  python run_eval.py --gym payment_gateway --model gpt-5.4,claude-opus-4-6,o3-pro --parallel 3 --save --trajectory
 
   # Other options
   python run_eval.py --gym inventory --model gpt-4o --scenario create_product
-  python run_eval.py --gym inventory --model gpt-5.4 --temperature 1.0 --save --trajectory
+  python run_eval.py --gym payment_gateway --model gpt-5.4 --temperature 1.0 --save --trajectory
         """,
     )
     parser.add_argument(
@@ -739,7 +756,10 @@ Examples:
         max_workers = min(args.parallel, len(models))
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {}
-            for model in models:
+            for idx, model in enumerate(models):
+                # Stagger WebSocket connections to avoid race conditions
+                if idx > 0:
+                    time.sleep(1)
                 future = executor.submit(
                     _run_single_model,
                     model=model,
@@ -924,7 +944,7 @@ def _run_single_model_detailed(
                 outcome_results = checker.check_all(scenario.outcome_checks)
                 for check, passed in zip(scenario.outcome_checks, outcome_results):
                     status = "✅" if passed else "❌"
-                    label = check.get("field", check.get("sku", check.get("customer_email", check["type"])))
+                    label = _check_label(check)
                     print(f"  {status} {check['type']}: {label}")
 
                 print()
@@ -999,6 +1019,15 @@ def _run_single_model_detailed(
         "results": results,
         "elapsed": model_elapsed,
     }
+
+
+def _check_label(check: dict) -> str:
+    """Extract a human-readable label from an outcome check dict (gym-agnostic)."""
+    # Try common identifier keys across all gyms, then fall back to type
+    for key in ("field", "sku", "email", "customer_email", "event_type", "destination", "status"):
+        if key in check and key != "type":
+            return str(check[key])
+    return check.get("type", "?")
 
 
 def _short_json(obj, max_len=80):
